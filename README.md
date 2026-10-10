@@ -1,6 +1,6 @@
-# QUORUM
+# MetroDesk
 
-Emergency planners and exercise facilitators need to see why a response proposal changed, what evidence informed it, and which objections remain. QUORUM turns a supplied situation, documents and constraints into an inspectable council transcript and cited decision brief, with proposal history and dissent preserved.
+Emergency planners and exercise facilitators need to see why a response proposal changed, what evidence informed it, and which objections remain. MetroDesk turns a supplied situation, documents and constraints into an inspectable council transcript and cited decision brief, with proposal history and dissent preserved.
 
 Five software agents use NVIDIA Nemotron through Nebius Token Factory in separate calls. Tavily supplies research and source extraction. The Three.js theater shows the actual speaker and execution state beside readable contributions.
 
@@ -25,7 +25,7 @@ $env:PORT = "4401"
 npm start
 ```
 
-An older server is identified by the UI's restart message. Current API version: `quorum-1`.
+An older server is identified by the UI's restart message. Current API version: `metrodesk-1`.
 
 ## Workflow
 
@@ -88,11 +88,11 @@ JSON, HTML and acceptance-inspection artifacts are written to `artifacts/`. Chec
 
 Targets Best Apps and Agents and functional Tavily integration. See `docs/SUBMISSION.md`, `docs/DEMO.md` and `docs/PROVIDER-FEEDBACK.md` for delivery status, the under-three-minute demo and factual provider feedback. The deadline is October 30, 2026, at 1 p.m. Eastern.
 
-Public repository: https://github.com/wpimedia1/quorum. The MIT license is included. A judge-accessible working build and a public YouTube video remain outstanding. Review third-party vendor licenses before publishing.
+Public repository: https://github.com/wpimedia1/metrodesk. The MIT license is included. A judge-accessible working build and a public YouTube video remain outstanding. Review third-party vendor licenses before publishing.
 
 ## Hosted Judge Access
 
-Configure provider keys server-side. Set `HOST=0.0.0.0`, `APP_ORIGIN=https://your-host`, `QUORUM_USERNAME` and `QUORUM_PASSWORD`; public binding refuses startup without HTTPS origin and credentials. Built-in HTTP Basic authentication protects the entire application, including API, records and connections. Terminate TLS at a reverse proxy and do not expose the internal HTTP port. Give trusted judges application credentials, never provider keys. The acceptance runner reads these credentials privately from the environment or `.env`.
+Configure provider keys server-side. Set `HOST=0.0.0.0`, `APP_ORIGIN=https://your-host`, `METRODESK_USERNAME` and `METRODESK_PASSWORD`; public binding refuses startup without HTTPS origin and credentials. Built-in HTTP Basic authentication protects the entire application, including API, records and connections. Terminate TLS at a reverse proxy and do not expose the internal HTTP port. Give trusted judges application credentials, never provider keys. The acceptance runner reads these credentials privately from the environment or `.env`.
 
 ## Limitations
 

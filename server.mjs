@@ -16,13 +16,13 @@ const root=path.dirname(fileURLToPath(import.meta.url));
 const inherited={...process.env};
 try{process.loadEnvFile(path.join(root,'.env'));}catch{}
 const port=Number(process.env.PORT||4400),host=process.env.HOST||'127.0.0.1',base=process.env.APP_ORIGIN||`http://127.0.0.1:${port}`;
-const authorized=createAccess({host,origin:base,username:process.env.QUORUM_USERNAME,password:process.env.QUORUM_PASSWORD});
+const authorized=createAccess({host,origin:base,username:process.env.METRODESK_USERNAME,password:process.env.METRODESK_PASSWORD});
 const credentials=createCredentialStore(inherited,process.env);
 const config={model:process.env.NEBIUS_MODEL||'nvidia/Nemotron-3-Ultra-550b-a55b'};
-function publicConfig(){const providers=credentials.public();return {nebius:providers.nebius.configured,tavily:providers.tavily.configured,providers,model:config.model,version:'quorum-1',runtime_contract:2};}
+function publicConfig(){const providers=credentials.public();return {nebius:providers.nebius.configured,tavily:providers.tavily.configured,providers,model:config.model,version:'metrodesk-1',runtime_contract:2};}
 const cases=new Map(), jobs=new Map(),streams=new Map(),writes=new Map();
 // Read once at startup so a later environment change cannot redirect live-record archives.
-const recordsDir=process.env.QUORUM_RECORDS_DIR||path.join(root,'records');
+const recordsDir=process.env.METRODESK_RECORDS_DIR||path.join(root,'records');
 await mkdir(path.join(root,'data'),{recursive:true});
 async function save(c){c.updated_at=new Date().toISOString();c.revision=(c.revision||0)+1;const revision=c.revision,content=JSON.stringify(c,null,2),p=path.join(root,'data',`${c.id}.json`);const pending=(writes.get(c.id)||Promise.resolve()).catch(()=>{}).then(async()=>{await writeRecord(p,content);for(const res of streams.get(c.id)||[])res.write(`id: ${revision}\nevent: state\ndata: ${JSON.stringify({revision})}\n\n`);});writes.set(c.id,pending);await pending;if(writes.get(c.id)===pending)writes.delete(c.id);}
 for(const file of await readdir(path.join(root,'data'))){if(!file.endsWith('.json'))continue;try{const c=JSON.parse(await readFile(path.join(root,'data',file),'utf8'));if(c.record_version!==2)continue;if(['running','recovering'].includes(c.status))c.status='interrupted';cases.set(c.id,c);}catch{}}
@@ -44,7 +44,7 @@ function planningSettings(b){
 const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.mjs':'text/javascript','.svg':'image/svg+xml','.png':'image/png'};
 http.createServer(async(req,res)=>{
  try {
- if(!authorized(req.headers.authorization)){res.writeHead(401,{'WWW-Authenticate':'Basic realm="QUORUM", charset="UTF-8"','Cache-Control':'no-store','Content-Type':'application/json'});return res.end(JSON.stringify({error:'Authentication required.'}));}
+ if(!authorized(req.headers.authorization)){res.writeHead(401,{'WWW-Authenticate':'Basic realm="MetroDesk", charset="UTF-8"','Cache-Control':'no-store','Content-Type':'application/json'});return res.end(JSON.stringify({error:'Authentication required.'}));}
  if(![`127.0.0.1:${port}`,`localhost:${port}`,new URL(base).host].includes(req.headers.host))return send(res,403,{error:'Invalid host.'});
   if(!['GET','HEAD'].includes(req.method) && req.headers.origin && ![base,`http://localhost:${port}`].includes(req.headers.origin))return send(res,403,{error:'Invalid origin.'});
   const url=new URL(req.url,base), p=url.pathname;
@@ -69,7 +69,7 @@ http.createServer(async(req,res)=>{
   const match=p.match(/^\/api\/cases\/([a-f0-9-]+)(?:\/(run|stop|export|report|stream|delete|configure|evidence))?$/);
   if(match){const c=cases.get(match[1]);if(!c)return send(res,404,{error:'Inquiry not found.'});const action=match[2];
     if(!action || action==='export')return send(res,200,c);
-    if(action==='report'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Disposition':`inline; filename="quorum-${c.id}.html"`});return res.end(reportHTML(c));}
+    if(action==='report'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Disposition':`inline; filename="metrodesk-${c.id}.html"`});return res.end(reportHTML(c));}
     if(action==='stream'){
      res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});res.write(`id: ${c.revision||0}\nevent: state\ndata: ${JSON.stringify({revision:c.revision||0})}\n\n`);
      if(!streams.has(c.id))streams.set(c.id,new Set());streams.get(c.id).add(res);
@@ -91,4 +91,4 @@ http.createServer(async(req,res)=>{
   if(!full.startsWith(path.join(root,'public')+path.sep))return send(res,403,{error:'Forbidden.'});
   const data=await readFile(full);res.writeHead(200,{'Content-Type':types[path.extname(full)]||'application/octet-stream','X-Content-Type-Options':'nosniff'});res.end(data);
  }catch(e){send(res,e.code==='ENOENT'?404:400,{error:e.message});}
-}).listen(port,host,()=>console.log(`QUORUM listening at ${base}`));
+}).listen(port,host,()=>console.log(`MetroDesk listening at ${base}`));

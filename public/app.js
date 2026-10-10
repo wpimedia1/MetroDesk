@@ -1,7 +1,7 @@
 import {createTheater,seats} from './theater.js';
 import {renderCredentials} from './credential-ui.js';
 import {scenarioHTML,receiptsHTML} from './session-ui.js';
-import {esc,live,sessionStatus,messageHTML,listHTML} from './quorum-ui.js';
+import {esc,live,sessionStatus,messageHTML,listHTML} from './metrodesk-ui.js';
 const $=s=>document.querySelector(s),icons=()=>window.lucide?.createIcons();
 let lastRenderedFilter='',lastRenderedMessages=0;
 let intakeDocuments=[];
@@ -37,9 +37,9 @@ async function refreshConfig(){config=await api('/api/config');renderCredentials
 $('#connections').onclick=async()=>{try{await refreshConfig();const f=$('#settings-form');f.elements.model.value=config.model;f.elements.nebius.value='';f.elements.tavily.value='';$('#settings-state').textContent='';$('#settings').showModal();}catch(e){toast(e.message);}};
 $('#settings-form').onsubmit=async e=>{e.preventDefault();try{await api('/api/config',Object.fromEntries(new FormData(e.target)));e.target.elements.nebius.value='';e.target.elements.tavily.value='';await refreshConfig();$('#settings').close();toast('Connections saved.');}catch(e){$('#settings-state').textContent=e.message;}};
 $('#load-models').onclick=async()=>{const b=$('#load-models');b.disabled=true;try{await api('/api/config',Object.fromEntries(new FormData($('#settings-form'))));$('#settings-form').elements.nebius.value='';$('#settings-form').elements.tavily.value='';const r=await api('/api/models');$('#models').innerHTML=(r.data||[]).filter(x=>/nemotron/i.test(x.id)).map(x=>'<option value="'+esc(x.id)+'">').join('');$('#settings-state').textContent='Catalog access succeeded. Inference is checked during a session.';}catch(e){$('#settings-state').textContent=e.message;}finally{b.disabled=false;await refreshConfig().catch(()=>{});}};
-$('#start').onclick=async()=>{if(!active)return;if(awaiting(active)){openEvidence();return;}if(config.version!=='quorum-1'){toast('Restart the Node server to load QUORUM.');return;}stopReplay();try{await api('/api/cases/'+active.id+'/run',{});view='floor';await refreshActive();}catch(e){toast(e.message);}};
+$('#start').onclick=async()=>{if(!active)return;if(awaiting(active)){openEvidence();return;}if(config.version!=='metrodesk-1'){toast('Restart the Node server to load MetroDesk.');return;}stopReplay();try{await api('/api/cases/'+active.id+'/run',{});view='floor';await refreshActive();}catch(e){toast(e.message);}};
 $('#stop').onclick=async()=>{if(active)try{await api('/api/cases/'+active.id+'/stop',{});$('#status-detail').textContent='Stopping the current request...';}catch(e){toast(e.message);}};
-$('#export').onclick=()=>{if(!active)return;const url=URL.createObjectURL(new Blob([JSON.stringify(active,null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='quorum-'+active.id+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+$('#export').onclick=()=>{if(!active)return;const url=URL.createObjectURL(new Blob([JSON.stringify(active,null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='metrodesk-'+active.id+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 $('#report').onclick=()=>{if(active)window.open('/api/cases/'+active.id+'/report','_blank','noopener');};
 $('#delete').onclick=async()=>{if(!active||!confirm('Permanently delete this local session?'))return;try{await api('/api/cases/'+active.id+'/delete',{});stream?.close();stream=null;streamId=null;stopReplay();active=null;await listCases();render();}catch(e){toast(e.message);}};
 $('#replay').onclick=()=>{if(!active?.deliberation?.messages.length||live(active))return;stopReplay();view='floor';agent=null;round=null;replayIndex=0;render();replayTimer=setInterval(()=>{replayIndex++;if(replayIndex>=active.deliberation.messages.length){stopReplay();}render();},2200);};

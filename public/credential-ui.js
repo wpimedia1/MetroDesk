@@ -15,7 +15,7 @@ export function renderCredentials(config){
  }
  const state=document.querySelector('#connection-state');
  const providers=Object.values(config.providers||{}),last=providers.flatMap(p=>[p.last_request,p.catalog]).filter(Boolean).sort((a,b)=>b.finished_at.localeCompare(a.finished_at));
- state.textContent=config.version!=='quorum-1'?'Server restart required':!config.nebius||!config.tavily?'Credentials incomplete':last[0]&&last[0].status!=='succeeded'?statuses[last[0].status]:providers.every(p=>p.last_request?.status==='succeeded')?'Last requests succeeded':'Configured, not checked';
- state.classList.toggle('ready',config.version==='quorum-1'&&providers.length===2&&providers.every(p=>p.last_request?.status==='succeeded'));
+ state.textContent=config.version!=='metrodesk-1'?'Server restart required':!config.nebius||!config.tavily?'Credentials incomplete':last[0]&&last[0].status!=='succeeded'?statuses[last[0].status]:providers.every(p=>p.last_request?.status==='succeeded')?'Last requests succeeded':'Configured, not checked';
+ state.classList.toggle('ready',config.version==='metrodesk-1'&&providers.length===2&&providers.every(p=>p.last_request?.status==='succeeded'));
  state.title=providers.map((p,i)=>`${i===0?'Nebius':'Tavily'}: ${p.configured?outcomeLabel(p.last_request):'Not configured'}`).join('\n');
 }

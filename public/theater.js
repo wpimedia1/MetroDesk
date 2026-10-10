@@ -3,7 +3,7 @@ export const seats=[{id:'negotiator',name:'Negotiator',color:'#e79160'},{id:'ana
 export function createTheater(host,onSelect){
  const scene=new THREE.Scene();scene.background=new THREE.Color('#172124');
  const camera=new THREE.PerspectiveCamera(40,1,.1,120),renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
- renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;host.append(renderer.domElement);renderer.domElement.setAttribute('aria-label','QUORUM amphitheater with five council participants');
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;host.append(renderer.domElement);renderer.domElement.setAttribute('aria-label','MetroDesk amphitheater with five council participants');
  scene.add(new THREE.HemisphereLight(0xd8edec,0x243335,2.1));
  const key=new THREE.DirectionalLight(0xffeedb,3);key.position.set(3,14,8);key.castShadow=true;key.shadow.mapSize.set(1024,1024);Object.assign(key.shadow.camera,{left:-14,right:14,top:14,bottom:-14});scene.add(key);
  const mat=color=>new THREE.MeshStandardMaterial({color,roughness:.65});

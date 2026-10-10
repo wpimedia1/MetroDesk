@@ -23,10 +23,10 @@ try{
    });
   });
   await page.route('**/*',async route=>{
-   const request=route.request(),url=new URL(request.url());assert.equal(url.origin,'http://quorum-record.invalid');
+   const request=route.request(),url=new URL(request.url());assert.equal(url.origin,'http://metrodesk-record.invalid');
    if(request.method()!=='GET')return route.fulfill({status:405,json:{error:'Read-only recorded inspection.'}});
    if(url.pathname.startsWith('/api/')){
-    if(url.pathname==='/api/config')return route.fulfill({json:{version:'quorum-1',runtime_contract:2,model:record.provider_calls?.at(-1)?.model||'',nebius:false,tavily:false,providers:{nebius:{configured:false,source:'none'},tavily:{configured:false,source:'none'}}}});
+    if(url.pathname==='/api/config')return route.fulfill({json:{version:'metrodesk-1',runtime_contract:2,model:record.provider_calls?.at(-1)?.model||'',nebius:false,tavily:false,providers:{nebius:{configured:false,source:'none'},tavily:{configured:false,source:'none'}}}});
     if(url.pathname==='/api/cases')return route.fulfill({json:[record]});
     if(url.pathname===`/api/cases/${id}`)return route.fulfill({json:record});
     return route.fulfill({status:404,json:{error:'Unavailable in recorded inspection.'}});
@@ -34,7 +34,7 @@ try{
    const file=path.resolve('public','.'+(url.pathname==='/'?'/index.html':url.pathname));assert.ok(file.startsWith(path.resolve('public')+path.sep));
    await route.fulfill({body:await readFile(file),contentType:{'.js':'text/javascript','.css':'text/css','.html':'text/html'}[path.extname(file)]||'application/octet-stream'});
   });
-  await page.goto('http://quorum-record.invalid');await page.waitForFunction(()=>document.querySelector('#case-select').value!==''&&document.querySelector('#status-title').textContent!=='Ready');await page.waitForTimeout(700);
+  await page.goto('http://metrodesk-record.invalid');await page.waitForFunction(()=>document.querySelector('#case-select').value!==''&&document.querySelector('#status-title').textContent!=='Ready');await page.waitForTimeout(700);
   assert.equal(await page.locator('#start').isDisabled(),true);
   assert.equal(await page.locator('#footer-mode').innerText(),'RECORDED CASE');
   const status=await page.locator('#status-title').innerText();if(record.status==='error')assert.equal(status,'Failed');if(record.status==='complete')assert.equal(status,'Finished');

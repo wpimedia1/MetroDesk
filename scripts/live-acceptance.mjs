@@ -5,7 +5,7 @@ import {randomUUID} from 'node:crypto';
 try{process.loadEnvFile('.env');}catch{}
 const options=parseAcceptanceArgs(process.argv.slice(2));
 const headers={};
-if(process.env.QUORUM_USERNAME&&process.env.QUORUM_PASSWORD)headers.Authorization='Basic '+Buffer.from(process.env.QUORUM_USERNAME+':'+process.env.QUORUM_PASSWORD).toString('base64');
+if(process.env.METRODESK_USERNAME&&process.env.METRODESK_PASSWORD)headers.Authorization='Basic '+Buffer.from(process.env.METRODESK_USERNAME+':'+process.env.METRODESK_PASSWORD).toString('base64');
 async function request(route,data){
  const response=await fetch(options.base+route,{method:data===undefined?'GET':'POST',headers:{...headers,...(data!==undefined?{'Content-Type':'application/json'}:{})},body:data===undefined?undefined:JSON.stringify(data),signal:AbortSignal.timeout(20000)});
  if(!response.ok)throw Error(`API ${route}: HTTP ${response.status}`);
@@ -14,7 +14,7 @@ async function request(route,data){
 let c,started=false,runRequested=false,interrupted=false;const runId=randomUUID();
 process.on('SIGINT',()=>{interrupted=true;});process.on('SIGTERM',()=>{interrupted=true;});
 try{
- const config=await request('/api/config');if(config.runtime_contract!==2)throw Error('Restart the server with the current QUORUM runtime before acceptance.');
+ const config=await request('/api/config');if(config.runtime_contract!==2)throw Error('Restart the server with the current MetroDesk runtime before acceptance.');
  if(options.case)c=await request('/api/cases/'+options.case);
  else{
   if(!options.brief)throw Error('Supply --case CASE_ID or --brief PATH.');
