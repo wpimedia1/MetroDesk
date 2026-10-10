@@ -59,7 +59,7 @@ export function createTheater(host,onSelect){
  const packet=new THREE.Mesh(new THREE.SphereGeometry(.11,16,12),new THREE.MeshBasicMaterial({color:'#bff3ea'}));packet.visible=false;scene.add(packet);
  // Objection threads: one tube per objection from the objecting seat to the proposal board, coloured by status.
  const threads=new THREE.Group();scene.add(threads);
- const statusColor={open:'#e56f68',deferred:'#d9a441',addressed:'#3fb58f',withdrawn:'#7d8c8a'},voteColor={support:'#3fb58f',conditional_support:'#d9a441',oppose:'#e56f68'};
+ const statusColor={open:'#e56f68',deferred:'#d9a441',addressed:'#9ccfbd',verified:'#3fb58f',disputed:'#b5179e',withdrawn:'#7d8c8a'},voteColor={support:'#3fb58f',conditional_support:'#d9a441',oppose:'#e56f68'};
  const boardAnchor=new THREE.Vector3(0,2.2,1.5);
  // Speech bubbles are HTML so text stays sharp; one per seat plus one for the moderator at the board.
  const bubbleLayer=document.querySelector('#seat-labels');
