@@ -173,7 +173,8 @@ export function checkContribution(c,op,d){
  const pending=pendingReviews(c,op.agent),reviewed=new Set();
  if(!['challenge','vote'].includes(op.kind)&&d.resolution_reviews.length)errors.push('Only reviewers check resolutions, in challenge and vote turns.');
  for(const r of d.resolution_reviews){if(!r||!pending.some(o=>o.id===r.objection_id)||reviewed.has(r.objection_id)||!['verified','rejected'].includes(r.verdict)||typeof r.reason!=='string'||!r.reason.trim())errors.push('Each resolution review needs one of your objections marked addressed, a verdict (verified or rejected) and a reason.');else reviewed.add(r.objection_id);}
- if(['challenge','vote'].includes(op.kind))for(const o of pending)if(!reviewed.has(o.id))errors.push(`Review the resolution of your objection ${o.id}: verified if the cited changes resolve it, rejected with the reason if not.`);
+ const missing=['challenge','vote'].includes(op.kind)?pending.filter(o=>!reviewed.has(o.id)).map(o=>o.id):[];
+ if(missing.length)errors.push(`Review the resolution of your objection${missing.length>1?'s':''} ${missing.join(', ')}: one resolution_reviews entry for each of ${pending.map(o=>o.id).join(', ')}, verified if the cited changes resolve it, rejected with the reason if not.`);
  if(d.objections.length>3)errors.push('Raise at most three objections per turn; keep the most material.');
  for(const o of d.objections)if(!o||typeof o.summary!=='string'||!o.summary.trim()||!['critical','material','minor'].includes(o.severity))errors.push('Objections need a summary and severity.');
  if(d.unresolved_issues.some(x=>typeof x!=='string'||!x.trim()))errors.push('Unresolved issues must be nonempty strings.');
@@ -231,6 +232,7 @@ function accept(c,op,d){
  for(const o of d.objections){const objection={...o,id:`O${del.objections.length+1}`,message_id:id,agent:op.agent,proposal_version:message.proposal_version,status:'open',history:[]};del.objections.push(objection);message.objection_ids.push(objection.id);}
  for(const r of d.resolutions){const o=del.objections.find(o=>o.id===r.objection_id);o.status=r.disposition;o.history.push({...r,changes:r.change_refs.map(n=>del.proposals.at(-1)?.changes?.[n-1]),message_id:id,proposal_version:message.proposal_version});}
  // Verified resolutions close; rejected ones reopen in a challenge (the next revision must answer) or are disputed in a vote.
+ for(const oid of d.unreviewed_objections||[]){const o=del.objections.find(o=>o.id===oid);o.status='unreviewed';o.history.push({review:'not_reviewed',agent:op.agent,message_id:id,proposal_version:message.proposal_version});}
  for(const r of d.resolution_reviews||[]){const o=del.objections.find(o=>o.id===r.objection_id);o.status=r.verdict==='verified'?'verified':op.kind==='vote'?'disputed':'open';o.history.push({review:r.verdict,reason:r.reason,agent:op.agent,message_id:id,proposal_version:message.proposal_version});}
  del.messages.push(message);del.completed_operations.push(op.id);
  const p=del.participants.find(p=>p.id===op.agent);if(p){p.state.position=d.summary;p.state.message_ids.push(id);}c.assessments[op.agent]=d.summary;
@@ -333,13 +335,20 @@ export async function runDeliberation(c,io,signal){
      await publish('research',`Server researching ${unsearched.length} public evidence request${unsearched.length===1?'':'s'} before any escalation to the reviewer.`,{agent:op.agent,operation_id:op.id});
      continue;
     }
-    // A quote missing from its source gets one correction. If it persists and is the only problem, the
-    // contribution is accepted with that citation marked unverified (shown, not counted as evidence).
-    const quoteOnly=problems.length&&!parseFailure&&d?.action==='contribute'&&problems.every(p=>p.startsWith('Citation quote for '));
-    let unverified=[];
-    if(quoteOnly&&state.quote_correction_given){unverified=unmatchedQuotes(c,d);d={...d,citations:d.citations.map((x,i)=>unverified.includes(i)?{...x,verified:false}:x)};problems.length=0;}
-    else if(quoteOnly)state.quote_correction_given=true;
-    c.decisions.push({attempt:attempt.number,call:c.actions,agent:op.agent,operation_id:op.id,action:d?.action||null,max_tokens:state.max_tokens,accepted:!problems.length,...(unverified.length?{unverified_citations:unverified.map(i=>d.citations[i].source_id)}:{}),response:d||null,validation_error:problems.join(' '),...(parseFailure?{parse_diagnostic:parseFailure.diagnostic}:{})});
+    // Soft problems get one correction: a quote missing from its source, or an addressed resolution the reviewer
+    // left unreviewed. If only soft problems persist, the contribution is accepted and they are recorded, not hidden:
+    // the citation is marked unverified (not counted as evidence) and the objection is marked unreviewed. Both
+    // appear in the determination and keep the run from counting as a good run.
+    const soft=p=>p.startsWith('Citation quote for ')||p.startsWith('Review the resolution of your objection');
+    const softOnly=problems.length&&!parseFailure&&d?.action==='contribute'&&problems.every(soft);
+    let unverified=[],unreviewed=[];
+    if(softOnly&&(state.soft_correction_given||state.quote_correction_given)){
+     unverified=unmatchedQuotes(c,d);d={...d,citations:d.citations.map((x,i)=>unverified.includes(i)?{...x,verified:false}:x)};
+     const reviewed=new Set((Array.isArray(d.resolution_reviews)?d.resolution_reviews:[]).map(r=>r?.objection_id));
+     unreviewed=pendingReviews(c,op.agent).filter(o=>!reviewed.has(o.id)).map(o=>o.id);d={...d,unreviewed_objections:unreviewed};problems.length=0;
+    }
+    else if(softOnly)state.soft_correction_given=true;
+    c.decisions.push({attempt:attempt.number,call:c.actions,agent:op.agent,operation_id:op.id,action:d?.action||null,max_tokens:state.max_tokens,accepted:!problems.length,...(unverified.length?{unverified_citations:unverified.map(i=>d.citations[i].source_id)}:{}),...(unreviewed.length?{unreviewed_objections:unreviewed}:{}),response:d||null,validation_error:problems.join(' '),...(parseFailure?{parse_diagnostic:parseFailure.diagnostic}:{})});
     if(problems.length){
      state.retries++;state.correction={errors:problems,rejected_response:d||null,partial_response:parseFailure?.diagnostic?.response_text};
      if(parseFailure?.code==='MODEL_OUTPUT_LIMIT')state.max_tokens=Math.min(state.max_tokens*2,65536);

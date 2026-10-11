@@ -2,10 +2,10 @@ import {mkdir,writeFile,chmod} from 'node:fs/promises';
 import path from 'node:path';
 import {inspectAcceptance} from './acceptance.mjs';
 
-// A good run passes research acceptance and has no unverified citations.
+// A good run passes research acceptance, has no unverified citations and no resolution left unreviewed.
 export function goodRun(c){
  const inspected=inspectAcceptance(c,{requireResearch:true});
- return inspected.passed&&inspected.unverified_citations.length===0;
+ return inspected.passed&&inspected.unverified_citations.length===0&&!(c.deliberation?.objections||[]).some(o=>o.status==='unreviewed');
 }
 // Only good runs are copied into records/, which Git tracks. Copies are written once per revision
 // (never overwritten) and marked read-only. Every other run stays in data/, which Git ignores.
