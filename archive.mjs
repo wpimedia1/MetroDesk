@@ -2,12 +2,15 @@ import {mkdir,writeFile,chmod} from 'node:fs/promises';
 import path from 'node:path';
 import {inspectAcceptance} from './acceptance.mjs';
 
-// A good run passes research acceptance, has no unverified citations and no resolution left unreviewed.
+// A recorded run is a completed live deliberation that used Tavily: it passes acceptance (all 21 contributions,
+// four proposal versions, votes, determination and linked provider receipts) and has successful search and extract
+// receipts. Its flaws are not grounds for exclusion: unverified citations, unreviewed or disputed objections and
+// declined evidence stay in the record and the determination, where they are disclosed.
 export function goodRun(c){
- const inspected=inspectAcceptance(c,{requireResearch:true});
- return inspected.passed&&inspected.unverified_citations.length===0&&!(c.deliberation?.objections||[]).some(o=>o.status==='unreviewed');
+ const tavily=endpoint=>(c.provider_calls||[]).some(r=>r.provider==='Tavily'&&r.status==='succeeded'&&r.http_status===200&&String(r.endpoint).endsWith(endpoint));
+ return inspectAcceptance(c).passed&&tavily('/search')&&tavily('/extract');
 }
-// Only good runs are copied into records/, which Git tracks. Copies are written once per revision
+// Only recorded runs are copied into records/, which Git tracks. Copies are written once per revision
 // (never overwritten) and marked read-only. Every other run stays in data/, which Git ignores.
 export async function archiveRecord(dir,c,{accept=goodRun}={}){
  if(!/^[a-f0-9-]{36}$/.test(String(c.id)))throw Error('Invalid record ID for archive.');

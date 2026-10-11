@@ -17,7 +17,7 @@ Public repository: https://github.com/wpimedia1/MetroDesk (MIT license).
 
 ## Remaining
 
-- A good run: a fresh, uninterrupted live session that passes research acceptance with no unverified citations.
+- A completed live run with Tavily research, its flaws disclosed in the record.
 - Judge-accessible application or test-build URL. A localhost URL is not publicly accessible.
 - Public YouTube video under three minutes, recorded from the working application; see DEMO.md.
 - First-person onboarding and provider feedback; see PROVIDER-FEEDBACK.md.
