@@ -3,6 +3,3 @@ node_modules/
 data/
 artifacts/
 *.log
-misc/
-town-hall-*.json
-failure-lab-*.json

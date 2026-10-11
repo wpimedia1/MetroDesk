@@ -71,7 +71,7 @@ Invalid responses feed correction into the unfinished agent turn. Truncation reg
 
 ## Verification
 
-Inspect an actual saved case without generating or replacing contributions: `node scripts/inspect-recorded-ui.mjs CASE_ID`. This produces desktop/mobile screenshots and diagnostics labeled recorded, read-only inspection. It makes no provider calls and cannot establish new live completion.
+Inspect an actual saved case without generating or replacing contributions: `node scripts/inspect-recorded-ui.mjs CASE_ID`. Set `BUNDLED_MODULES` to a `node_modules` directory that contains Playwright; `CHROME_PATH` overrides the default Chrome location. This produces desktop/mobile screenshots and diagnostics labeled recorded, read-only inspection. It makes no provider calls and cannot establish new live completion.
 
 Start the current server with `npm start`, then execute acceptance from a second PowerShell terminal. These commands make paid runtime requests through that server; the runner never writes directly into its case store.
 
@@ -88,7 +88,7 @@ JSON, HTML and acceptance-inspection artifacts are written to `artifacts/`. Chec
 
 Targets Best Apps and Agents and functional Tavily integration. See `docs/SUBMISSION.md`, `docs/DEMO.md` and `docs/PROVIDER-FEEDBACK.md` for delivery status, the under-three-minute demo and factual provider feedback. The deadline is October 30, 2026, at 1 p.m. Eastern.
 
-Public repository: https://github.com/wpimedia1/metrodesk. The MIT license is included. A judge-accessible working build and a public YouTube video remain outstanding. Review third-party vendor licenses before publishing.
+Public repository: https://github.com/wpimedia1/MetroDesk. The MIT license is included. A judge-accessible working build and a public YouTube video remain outstanding. Review third-party vendor licenses before publishing.
 
 ## Hosted Judge Access
 

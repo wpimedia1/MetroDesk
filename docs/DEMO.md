@@ -14,6 +14,6 @@ Target: 2 minutes 50 seconds. Record the working application after a successful 
 | 2:25-2:40 | Readable report and JSON export | Show the usable decision record, cited evidence, proposal history and transcript. |
 | 2:40-2:50 | Result and access | Summarize the actual determination and show the verified judge URL. Reaffirm the model and services displayed earlier; do not introduce them only at the end. |
 
-Upload the finished video publicly to YouTube and use its real URL in Devpost. Supply the working app/test-build URL, the public repository https://github.com/wpimedia1/metrodesk, and provider feedback. Record the video from a good run. The recording, YouTube URL and judge URL are outstanding.
+Upload the finished video publicly to YouTube and use its real URL in Devpost. Supply the working app/test-build URL, the public repository https://github.com/wpimedia1/MetroDesk, and provider feedback. Record the video from a good run. The recording, YouTube URL and judge URL are outstanding.
 
 References: https://nebiusglobalaihackathon.devpost.com/rules and https://nebiusglobalaihackathon.devpost.com/updates/46205-how-to-build-a-winning-project

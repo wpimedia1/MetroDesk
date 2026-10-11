@@ -1,4 +1,4 @@
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+import {esc} from './metrodesk-ui.js';
 const dollars=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
 export function scenarioHTML(c,r){
  const review=(r===c.rounds?.at(-1)||!r?c.review:null)||r?.review;

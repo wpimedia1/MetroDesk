@@ -43,6 +43,7 @@ function planningSettings(b){
 }
 const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.mjs':'text/javascript','.svg':'image/svg+xml','.png':'image/png'};
 http.createServer(async(req,res)=>{
+ res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Frame-Options','DENY');
  try {
  if(!authorized(req.headers.authorization)){res.writeHead(401,{'WWW-Authenticate':'Basic realm="MetroDesk", charset="UTF-8"','Cache-Control':'no-store','Content-Type':'application/json'});return res.end(JSON.stringify({error:'Authentication required.'}));}
  if(![`127.0.0.1:${port}`,`localhost:${port}`,new URL(base).host].includes(req.headers.host))return send(res,403,{error:'Invalid host.'});
@@ -61,7 +62,7 @@ http.createServer(async(req,res)=>{
   if(p==='/api/document' && req.method==='POST'){
     const b=await body(req),bytes=Buffer.from(String(b.data||''),'base64');if(bytes.length>10*1024*1024)throw Error('Document must be under 10 MB.');
     let text='',notes=[];
-    if(bytes.subarray(0,5).toString()==='%PDF-'){const pdfjs=await import('pdfjs-dist/legacy/build/pdf.mjs');const doc=await pdfjs.getDocument({data:new Uint8Array(bytes),useSystemFonts:true,isEvalSupported:false}).promise;if(doc.numPages>80)throw Error('Maximum 80 pages.');for(let i=1;i<=doc.numPages;i++){const page=await doc.getPage(i);const content=await page.getTextContent();text+=`\n[Page ${i}]\n`+content.items.map(x=>x.str||'').join(' ');}const attachments=await doc.getAttachments();if(attachments)notes.push(`Embedded attachments: ${Object.keys(attachments).join(', ')}`);await doc.destroy();if(text.trim().length<40)notes.push('Little extractable text. Scanned pages may require OCR; no OCR or authenticity determination performed.');}
+    if(bytes.subarray(0,5).toString()==='%PDF-'){const pdfjs=await import('pdfjs-dist/legacy/build/pdf.mjs');const task=pdfjs.getDocument({data:new Uint8Array(bytes),useSystemFonts:true,isEvalSupported:false});try{const doc=await task.promise;if(doc.numPages>80)throw Error('Maximum 80 pages.');for(let i=1;i<=doc.numPages;i++){const page=await doc.getPage(i);const content=await page.getTextContent();text+=`\n[Page ${i}]\n`+content.items.map(x=>x.str||'').join(' ');}const attachments=await doc.getAttachments();if(attachments)notes.push(`Embedded attachments: ${Object.keys(attachments).join(', ')}`);}finally{await task.destroy();}if(text.trim().length<40)notes.push('Little extractable text. Scanned pages may require OCR; no OCR or authenticity determination performed.');}
     else if(/\.(txt|md)$/i.test(b.name||''))text=bytes.toString('utf8');else throw Error('Supported files: PDF, TXT and Markdown.');
     if(text.length>60000)throw Error('Extracted text exceeds 60,000 characters. Submit a smaller document.');
     return send(res,200,{text,notes,sha256:createHash('sha256').update(bytes).digest('hex')});
@@ -69,7 +70,7 @@ http.createServer(async(req,res)=>{
   const match=p.match(/^\/api\/cases\/([a-f0-9-]+)(?:\/(run|stop|export|report|stream|delete|configure|evidence))?$/);
   if(match){const c=cases.get(match[1]);if(!c)return send(res,404,{error:'Inquiry not found.'});const action=match[2];
     if(!action || action==='export')return send(res,200,c);
-    if(action==='report'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Disposition':`inline; filename="metrodesk-${c.id}.html"`});return res.end(reportHTML(c));}
+    if(action==='report'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Disposition':`inline; filename="metrodesk-${c.id}.html"`,'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"});return res.end(reportHTML(c));}
     if(action==='stream'){
      res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});res.write(`id: ${c.revision||0}\nevent: state\ndata: ${JSON.stringify({revision:c.revision||0})}\n\n`);
      if(!streams.has(c.id))streams.set(c.id,new Set());streams.get(c.id).add(res);

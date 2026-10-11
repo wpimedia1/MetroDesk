@@ -6,7 +6,7 @@ Primary track: Best Apps and Agents. Bonus target: Best Use of Tavily. No partic
 
 Built With draft: Node.js, Three.js, NVIDIA Nemotron, Nebius Token Factory, Tavily. AI Cloud is not listed because no AI Cloud deployment has been performed. The Devpost fields are not yet published.
 
-Public repository: https://github.com/wpimedia1/metrodesk (MIT license).
+Public repository: https://github.com/wpimedia1/MetroDesk (MIT license).
 
 ## Completed
 

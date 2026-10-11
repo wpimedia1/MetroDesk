@@ -5,9 +5,10 @@ import assert from 'node:assert/strict';
 
 const id=process.argv[2];if(!/^[a-f0-9-]{36}$/.test(id||''))throw Error('Usage: node scripts/inspect-recorded-ui.mjs CASE_ID');
 const record=JSON.parse(await readFile(`data/${id}.json`,'utf8'));
-const require=createRequire((process.env.BUNDLED_MODULES||'C:/path/to/node_modules')+'/package.json');
+if(!process.env.BUNDLED_MODULES)throw Error('Set BUNDLED_MODULES to a node_modules directory that contains playwright.');
+const require=createRequire(process.env.BUNDLED_MODULES+'/package.json');
 const {chromium}=require('playwright');
-const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',args:['--use-angle=d3d11']});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',args:['--use-angle=d3d11']});
 const results=[];
 try{
  await mkdir('artifacts',{recursive:true});
