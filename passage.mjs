@@ -1,5 +1,6 @@
 // Exact-passage matching that tolerates formatting only: Unicode compatibility forms,
-// typographic quotes and dashes, and whitespace runs (PDF text is joined with spaces).
+// typographic quotes and dashes, whitespace runs (PDF text is joined with spaces) and table cell borders
+// (adjacent "|" separators, as at a Markdown row boundary, count as one).
 // Wording, punctuation otherwise and letter case must still match.
 export function normalizePassage(value){
  return String(value??'').normalize('NFKC')
@@ -7,7 +8,8 @@ export function normalizePassage(value){
   .replace(/[“”„‟″]/g,'"')
   .replace(/[‐-―−]/g,'-')
   .replace(/­/g,'')
-  .replace(/\s+/g,' ').trim();
+  .replace(/\s+/g,' ')
+  .replace(/\|(?: ?\|)+/g,'|').trim();
 }
 // Extracted web pages keep markdown link and image code; readers (and models) quote the visible text.
 export function stripLinkMarkup(text){
