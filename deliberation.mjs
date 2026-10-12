@@ -57,6 +57,23 @@ export function roundObjections(c,op){
 // Soft problems get one correction, then the contribution is accepted with the gap recorded (repair 6).
 export const softProblem=p=>p.startsWith('Citation quote for ')||p.startsWith('Review the resolution of your objection')||p.startsWith('Address or explicitly defer open objection');
 export const ledgerProblem=p=>p.startsWith('Ledger: ');
+const omissionProblem=p=>p.startsWith('Address or explicitly defer open objection');
+// Mechanical slips in a revision are corrected, not rejected: change_refs outside this revision's changes are ignored
+// with a note, and an addressed resolution left with no valid reference is carried as deferred with the reason.
+export function normalizeChangeRefs(op,d){
+ const notes=[];
+ if(op.kind!=='revise'||d?.action!=='contribute'||!Array.isArray(d.resolutions))return {d,notes};
+ const count=Array.isArray(d.proposal?.changes)?d.proposal.changes.length:0;
+ const resolutions=d.resolutions.map(r=>{
+  if(!r||!Array.isArray(r.change_refs))return r;
+  const valid=r.change_refs.filter(n=>Number.isInteger(n)&&n>=1&&n<=count),ignored=r.change_refs.filter(n=>!valid.includes(n));
+  if(!ignored.length)return r;
+  notes.push(`${r.objection_id}: ignored change_refs ${ignored.join(', ')}; this revision has ${count} change${count===1?'':'s'}.`);
+  if(r.disposition==='addressed'&&!valid.length){notes.push(`${r.objection_id}: marked addressed with no valid change reference; carried as deferred.`);return {...r,disposition:'deferred',change_refs:[],explanation:`Marked addressed, but none of its change references exist in this revision. ${r.explanation||''}`.trim()};}
+  return {...r,change_refs:valid};
+ });
+ return {d:{...d,resolutions},notes};
+}
 export const openEvidenceRequests=c=>(c.deliberation?.evidence_requests||[]).filter(e=>e.status==='open');
 // The model writes line items only. Phase totals, actor allocations and the reserve are derived:
 // the reserve is the unspent remainder of the budget, so the only spending rule is the minimum reserve.
@@ -244,6 +261,7 @@ For research set proposal, disposition and determination to null, arrays to empt
 function accept(c,op,d){
  const del=c.deliberation,id=`M${del.messages.length+1}`,current=del.proposals.at(-1);
  const message={id,operation_id:op.id,agent:op.agent,kind:op.kind,round:op.round,at:new Date().toISOString(),proposal_version:current?.version||0,summary:d.summary,responds_to:expectedRespondsTo(c,op),resolution_reviews:d.resolution_reviews||[],citations:d.citations.map(x=>({...x,verified:x.verified!==false&&passageFound(c.sources.find(s=>s.id===x.source_id)?.content,x.quote)})),objection_ids:[],resolutions:d.resolutions,unresolved_issues:d.unresolved_issues,disposition:d.disposition};
+ if(d.mechanical_corrections)message.mechanical_corrections=d.mechanical_corrections;
  message.decision_call=c.actions;message.attempt=c.attempts.at(-1)?.number||null;
  message.evidence_request_ids=[];
  for(const r of d.evidence_requests||[]){const request={id:`E${del.evidence_requests.length+1}`,message_id:id,agent:op.agent,operation_id:op.id,round:op.round,need:r.need,reason:r.reason,source_type:r.source_type,server_searched:(del.operation?.server_searched||[]).includes(needKey(r.need)),research_actions_used:del.operation?.id===op.id?del.operation.research_count||0:0,status:'open',response:null,requested_at:message.at};del.evidence_requests.push(request);message.evidence_request_ids.push(request.id);}
@@ -351,6 +369,7 @@ export async function runDeliberation(c,io,signal){
     // Repair 5: after the resolutions pass, a ledger correction may return resolutions as []; the accepted ones are kept.
     const kept=state.prose_accepted;
     if(kept&&op.kind==='revise'&&d?.action==='contribute'&&d.proposal&&Array.isArray(d.resolutions)&&!d.resolutions.length)d={...d,resolutions:kept.resolutions,proposal:{...d.proposal,changes:kept.changes}};
+    const normalized=parseFailure?{d,notes:[]}:normalizeChangeRefs(op,d);d=normalized.d;const mechanicalNotes=normalized.notes;
     const problems=[...new Set(parseFailure?[parseFailure.message]:checkContribution(c,op,d))];
     if(d?.action!=='contribute'&&state.research_count>=2)problems.push('Research for this turn is complete. Return your contribution with explicit uncertainties.');
     // Public evidence is searched before it can reach the reviewer. The server runs that search itself instead of
@@ -371,22 +390,25 @@ export async function runDeliberation(c,io,signal){
     // appear in the determination and keep the run from counting as a good run.
     const soft=softProblem;
     const softOnly=problems.length&&!parseFailure&&d?.action==='contribute'&&problems.every(soft);
+    // Quote and review gaps are accepted after one correction; omitted resolutions are auto-deferred from attempt 3.
+    const correctedOnce=state.soft_correction_given||state.quote_correction_given,otherSoft=problems.some(p=>soft(p)&&!omissionProblem(p));
+    const acceptSoft=softOnly&&(!otherSoft||correctedOnce)&&(!problems.some(omissionProblem)||state.retries>=2);
     let unverified=[],unreviewed=[];
-    if(softOnly&&(state.soft_correction_given||state.quote_correction_given)){
+    if(acceptSoft){
      unverified=unmatchedQuotes(c,d);d={...d,citations:d.citations.map((x,i)=>unverified.includes(i)?{...x,verified:false}:x)};
      const reviewed=new Set((Array.isArray(d.resolution_reviews)?d.resolution_reviews:[]).map(r=>r?.objection_id));
      unreviewed=pendingReviews(c,op.agent).filter(o=>!reviewed.has(o.id)).map(o=>o.id);d={...d,unreviewed_objections:unreviewed};problems.length=0;
     }
-    else if(softOnly)state.soft_correction_given=true;
+    else if(softOnly){if(otherSoft)state.soft_correction_given=true;}
     // Repair 5: prose and resolutions passed; only the ledger needs correcting.
     else if(problems.length&&!parseFailure&&d?.action==='contribute'&&problems.some(ledgerProblem)&&problems.every(p=>ledgerProblem(p)||soft(p))){
      if(op.kind==='revise')state.prose_accepted={resolutions:d.resolutions,changes:d.proposal.changes};
      if(problems.some(soft))state.soft_correction_given=true;
      problems.push(op.kind==='revise'?'Your resolutions and changes passed and are kept. Fix only proposal.ledger_changes; you may return resolutions as [] to keep the accepted ones.':'Your proposal text passed. Fix only the ledger (proposal.scenario).');
     }
-    c.decisions.push({attempt:attempt.number,call:c.actions,agent:op.agent,operation_id:op.id,action:d?.action||null,max_tokens:state.max_tokens,accepted:!problems.length,...(unverified.length?{unverified_citations:unverified.map(i=>d.citations[i].source_id)}:{}),...(unreviewed.length?{unreviewed_objections:unreviewed}:{}),response:d||null,validation_error:problems.join(' '),...(parseFailure?{parse_diagnostic:parseFailure.diagnostic}:{})});
+    c.decisions.push({attempt:attempt.number,call:c.actions,agent:op.agent,operation_id:op.id,action:d?.action||null,max_tokens:state.max_tokens,accepted:!problems.length,...(mechanicalNotes.length?{mechanical_corrections:mechanicalNotes}:{}),...(unverified.length?{unverified_citations:unverified.map(i=>d.citations[i].source_id)}:{}),...(unreviewed.length?{unreviewed_objections:unreviewed}:{}),response:d||null,validation_error:problems.join(' '),...(parseFailure?{parse_diagnostic:parseFailure.diagnostic}:{})});
     if(problems.length){
-     state.retries++;state.correction={errors:problems,rejected_response:d||null,partial_response:parseFailure?.diagnostic?.response_text};
+     state.retries++;state.correction={errors:[...problems,...mechanicalNotes.map(n=>`Server correction: ${n}`)],rejected_response:d||null,partial_response:parseFailure?.diagnostic?.response_text};
      if(parseFailure?.code==='MODEL_OUTPUT_LIMIT')state.max_tokens=Math.min(state.max_tokens*2,65536);
      await publish('rejected',problems.join(' '),{agent:op.agent,operation_id:op.id});
      // Repair 2: from the fourth attempt, a revision is told explicitly that deferring the rest is valid.
@@ -397,7 +419,7 @@ export async function runDeliberation(c,io,signal){
     c.status='running';state.retries=0;state.correction=null;
     if(d.action==='contribute')delete state.prose_accepted;
     if(d.action!=='contribute'){state.pending_tool={action:d.action,query:d.query,source_ids:d.source_ids,summary:d.summary};await io.save(c);continue;}
-    const message=accept(c,op,d);c.phase='Act';await publish('contribution',message.summary,{agent:op.agent,message_id:message.id,proposal_version:message.proposal_version,operation_id:op.id,round_number:op.round});
+    const message=accept(c,op,mechanicalNotes.length?{...d,mechanical_corrections:mechanicalNotes}:d);c.phase='Act';await publish('contribution',message.summary,{agent:op.agent,message_id:message.id,proposal_version:message.proposal_version,operation_id:op.id,round_number:op.round});
    }
   }
   signal.throwIfAborted();
