@@ -14,10 +14,10 @@ Public repository: https://github.com/wpimedia1/MetroDesk (MIT license).
 - Node API, real provider transport, request receipts, reconnectable state stream, pause/resume, reviewer evidence requests and exports.
 - Three.js theater, Brief/Floor/Evidence/Decision views, participant selection, recorded replay and persistent outcomes.
 - MIT license, reproducible npm setup and demo script.
+- A completed live run with Tavily research, its flaws disclosed in the record: `records/65da1c7b-6d8a-4c20-8399-c87585e0de68-r751.json` (see VERIFICATION.md).
 
 ## Remaining
 
-- A completed live run with Tavily research, its flaws disclosed in the record.
 - Judge-accessible application or test-build URL. A localhost URL is not publicly accessible.
 - Public YouTube video under three minutes, recorded from the working application; see DEMO.md.
 - First-person onboarding and provider feedback; see PROVIDER-FEEDBACK.md.
