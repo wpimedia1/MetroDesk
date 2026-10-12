@@ -278,7 +278,7 @@ function accept(c,op,d){
 // remaining full web sources become excerpts, then this turn's sources are shortened; past that the call fails
 // instead of sending an oversized prompt.
 export const PAYLOAD_LIMIT=240000;
-const EXCERPT=1500,CURRENT_EXCERPT=6000;
+const EXCERPT=1500,CURRENT_EXCERPT=6000,MIN_EXCERPT=400,PARTIAL_TAIL=4000;
 export function modelPayload(c,op,state){
  const del=c.deliberation,recent=new Set([op.round,op.round-1]),cut=(x,n)=>String(x??'').slice(0,n);
  const messages=del.messages.map(m=>recent.has(m.round)?m:{id:m.id,agent:m.agent,kind:m.kind,round:m.round,proposal_version:m.proposal_version,summary:cut(m.summary,600),disposition:m.disposition??null,compacted:true});
@@ -288,12 +288,17 @@ export function modelPayload(c,op,state){
  const excerpt=s=>({...s,content:cut(s.content,EXCERPT),content_truncated:true,note:'Excerpt only. Extract this source again to read its full text.'});
  const web=s=>/^https?:\/\//i.test(s.url||'')&&s.kind==='extracted';
  let sources=sourcesForModel(c).map(s=>web(s)&&!inPlay.has(s.id)&&String(s.content).length>EXCERPT?excerpt(s):s);
- const build=()=>JSON.stringify({inquiry:briefForModel(c),objective:c.objective||'',stakeholder_needs:c.stakeholder_needs||'',constraints:c.constraints||{},operation:op,participant_state:del.participants.find(p=>p.id===op.agent)?.state,current_proposal:del.proposals.at(-1)||null,pending_reviews:pendingReviews(c,op.agent),messages,objections,evidence_requests,sources,research_results:retrievalsForModel(c,op.id),dispositions:del.dispositions,research_actions_remaining:2-state.research_count,correction:state.correction});
+ // A cut-off reply is returned to the model as its last part only, so a truncation retry cannot overflow the request.
+ const partial=state.correction?.partial_response,correction=typeof partial==='string'&&partial.length>PARTIAL_TAIL?{...state.correction,partial_response:partial.slice(-PARTIAL_TAIL),partial_response_note:`Last ${PARTIAL_TAIL} of ${partial.length} characters of your cut-off reply.`}:state.correction;
+ const build=()=>JSON.stringify({inquiry:briefForModel(c),objective:c.objective||'',stakeholder_needs:c.stakeholder_needs||'',constraints:c.constraints||{},operation:op,participant_state:del.participants.find(p=>p.id===op.agent)?.state,current_proposal:del.proposals.at(-1)||null,pending_reviews:pendingReviews(c,op.agent),messages,objections,evidence_requests,sources,research_results:retrievalsForModel(c,op.id),dispositions:del.dispositions,research_actions_remaining:2-state.research_count,correction});
  let text=build();
  while(text.length>PAYLOAD_LIMIT){
   const largest=sources.filter(s=>web(s)&&!s.content_truncated&&String(s.content).length>EXCERPT&&!del.retrievals.some(r=>r.operation_id===op.id&&r.results.some(x=>x.source_id===s.id))).sort((a,b)=>b.content.length-a.content.length)[0];
   // Then sources retrieved in this turn are shortened to a longer excerpt, still quotable verbatim.
   const current=largest||sources.filter(s=>web(s)&&String(s.content).length>CURRENT_EXCERPT).sort((a,b)=>b.content.length-a.content.length)[0];
+  // Still over: web sources not retrieved in this turn shrink to short excerpts, largest first.
+  if(!current){const small=sources.filter(s=>web(s)&&String(s.content).length>MIN_EXCERPT&&!del.retrievals.some(r=>r.operation_id===op.id&&r.results.some(x=>x.source_id===s.id))).sort((a,b)=>b.content.length-a.content.length)[0];
+   if(small){sources=sources.map(s=>s!==small?s:{...s,content:cut(s.content,MIN_EXCERPT),content_truncated:true,note:'Short excerpt only. Extract this source again to read its full text.'});text=build();continue;}}
   if(!current)throw Error(`Model payload is ${text.length} characters after compaction, over the ${PAYLOAD_LIMIT}-character limit.`);
   sources=sources.map(s=>s!==current?s:largest?excerpt(s):{...s,content:cut(s.content,CURRENT_EXCERPT),content_truncated:true,note:'Shortened to fit the request. Quote from this text.'});text=build();
  }
