@@ -3,7 +3,7 @@ import {readFile,mkdir,readdir,unlink} from 'node:fs/promises';
 import {randomUUID,createHash} from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {initializeDeliberation,runDeliberation,respondToEvidence,openEvidenceRequests} from './deliberation.mjs';
+import {initializeDeliberation,runDeliberation,respondToEvidence,respondToTriage,openEvidenceRequests} from './deliberation.mjs';
 import {reportHTML} from './report.mjs';
 import {writeRecord} from './record-store.mjs';
 import {archiveRecord} from './archive.mjs';
@@ -67,7 +67,7 @@ http.createServer(async(req,res)=>{
     if(text.length>60000)throw Error('Extracted text exceeds 60,000 characters. Submit a smaller document.');
     return send(res,200,{text,notes,sha256:createHash('sha256').update(bytes).digest('hex')});
   }
-  const match=p.match(/^\/api\/cases\/([a-f0-9-]+)(?:\/(run|stop|export|report|stream|delete|configure|evidence))?$/);
+  const match=p.match(/^\/api\/cases\/([a-f0-9-]+)(?:\/(run|stop|export|report|stream|delete|configure|evidence|triage))?$/);
   if(match){const c=cases.get(match[1]);if(!c)return send(res,404,{error:'Inquiry not found.'});const action=match[2];
     if(!action || action==='export')return send(res,200,c);
     if(action==='report'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Disposition':`inline; filename="metrodesk-${c.id}.html"`,'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"});return res.end(reportHTML(c));}
@@ -82,9 +82,10 @@ http.createServer(async(req,res)=>{
     if(action!=='stop'&&jobs.has(c.id)&&!['running','recovering'].includes(c.status))await jobs.get(c.id).done;
     if(action==='configure'){if(jobs.has(c.id)||c.rounds.length||c.deliberation?.messages.length)throw Error('Only a record without accepted contributions can be reconfigured.');Object.assign(c,planningSettings(await body(req)));await save(c);return send(res,200,c);}
     if(action==='delete'){if(jobs.has(c.id))throw Error('Stop this council before deleting the record.');await unlink(path.join(root,'data',`${c.id}.json`));cases.delete(c.id);return send(res,200,{deleted:true});}
+    if(action==='triage'){if(jobs.has(c.id))throw Error('Stop this council before triage.');const b=await body(req);respondToTriage(c,b.actions);await save(c);return send(res,200,c);}
     if(action==='evidence'){if(jobs.has(c.id))throw Error('Stop this council before responding.');const b=await body(req);respondToEvidence(c,b.responses);await save(c);return send(res,200,c);}
     if(action==='stop'){const b=await body(req);if(b.run_id&&b.run_id!==c.run_id)return send(res,409,{error:'Run ownership changed; not stopped.'});jobs.get(c.id)?.controller.abort();return send(res,200,{stopping:true,run_id:c.run_id});}
-    if(action==='run'){const b=await body(req);if(b.run_id&&!/^[a-f0-9-]{36}$/.test(b.run_id))throw Error('Invalid run ID.');if(jobs.has(c.id))throw Error('This council is already running.');if(jobs.size)throw Error('One council can run at a time.');const keys=credentials.snapshot();if(!keys.nebius.key||!keys.tavily.key)throw Error('Connect Nebius and Tavily in Connections before starting.');if(c.deliberation.determination)throw Error('Session complete. Create a follow-up inquiry.');if(openEvidenceRequests(c).length)throw Error('Answer or decline the open evidence requests before resuming.');const controller=new AbortController();c.run_id=b.run_id||randomUUID();c.status='running';const done=runDeliberation(c,ioFor({...keys,model:config.model},c),controller.signal).catch(e=>console.error('Council persistence failed:',e.code||e.name)).then(()=>archiveRecord(recordsDir,c).catch(e=>console.error('Live record archive failed:',e.message))).finally(()=>jobs.delete(c.id));jobs.set(c.id,{controller,done});return send(res,202,{started:true,run_id:c.run_id});}
+    if(action==='run'){const b=await body(req);if(b.run_id&&!/^[a-f0-9-]{36}$/.test(b.run_id))throw Error('Invalid run ID.');if(jobs.has(c.id))throw Error('This council is already running.');if(jobs.size)throw Error('One council can run at a time.');const keys=credentials.snapshot();if(!keys.nebius.key||!keys.tavily.key)throw Error('Connect Nebius and Tavily in Connections before starting.');if(c.deliberation.determination)throw Error('Session complete. Create a follow-up inquiry.');if(openEvidenceRequests(c).length)throw Error('Answer or decline the open evidence requests before resuming.');if(c.status==='needs_triage')throw Error('Complete the triage before resuming.');const controller=new AbortController();c.run_id=b.run_id||randomUUID();c.status='running';const done=runDeliberation(c,ioFor({...keys,model:config.model},c),controller.signal).catch(e=>console.error('Council persistence failed:',e.code||e.name)).then(()=>archiveRecord(recordsDir,c).catch(e=>console.error('Live record archive failed:',e.message))).finally(()=>jobs.delete(c.id));jobs.set(c.id,{controller,done});return send(res,202,{started:true,run_id:c.run_id});}
   }
   if(p.startsWith('/api/'))return send(res,404,{error:'Not found.'});
   let file=p==='/'?'/index.html':p;

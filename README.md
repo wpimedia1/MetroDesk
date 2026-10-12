@@ -67,7 +67,7 @@ Scenario proposals reconcile headline amounts, reserve, phase items, actor total
 
 Each model request is bounded to 240,000 characters of input: the current and previous rounds stay complete, older messages, closed objections and answered requests are compacted, and sources not in play become excerpts. If it still does not fit, the request fails rather than sending an oversized prompt.
 
-Invalid responses feed correction into the unfinished agent turn. Truncation regenerates complete JSON with increasing output allowance, up to 65,536 tokens. Six consecutive invalid answers produce an explicit failure; accepted work remains resumable. Refusals and provider connection errors remain explicit. Each agent turn can use two research actions before contributing, preventing endless research without a response.
+Invalid responses feed correction into the unfinished agent turn. Truncation regenerates complete JSON with increasing output allowance, up to 65,536 tokens. Six consecutive invalid answers pause the session as Needs triage: the reviewer keeps, defers, withdraws or merges open objections with a reason, and the same turn resumes; accepted work is kept. Refusals and provider connection errors remain explicit. Each agent turn can use two research actions before contributing, preventing endless research without a response.
 
 ## Verification
 

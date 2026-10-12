@@ -4,7 +4,7 @@ import {checkScenario} from './scenario.mjs';
 
 export function inspectAcceptance(c,{requireResearch=false,baselineReceipts=0}={}){
  const issues=[],d=c.deliberation,schedule=operationSchedule();
- if(c.status!=='complete'||!d?.determination)issues.push(c.status==='awaiting_evidence'?'Paused for reviewer evidence; answer or decline the open requests in the app, then resume.':'No completed determination.');
+ if(c.status!=='complete'||!d?.determination)issues.push(c.status==='awaiting_evidence'?'Paused for reviewer evidence; answer or decline the open requests in the app, then resume.':c.status==='needs_triage'?'Paused for reviewer triage; complete the triage in the app, then resume.':'No completed determination.');
  if(c.record_version!==2||!d)return {passed:false,issues:[...issues,'Not a v2 deliberation record.']};
  const finalVersion=schedule.filter(op=>['propose','revise'].includes(op.kind)).length;
  if(c.rounds.length!==3||d.proposals.length!==finalVersion||d.messages.length!==schedule.length)issues.push(`Expected three rounds, ${finalVersion} proposal versions and ${schedule.length} accepted contributions.`);
@@ -76,6 +76,6 @@ export function parseAcceptanceArgs(args){
 // A server restart marks the case interrupted but cannot update the attempt it killed, so
 // interrupted is terminal on its own; other terminal states wait for the attempt to record them.
 export function runFinished(c){
- if(['interrupted','awaiting_evidence'].includes(c?.status))return true;
+ if(['interrupted','awaiting_evidence','needs_triage'].includes(c?.status))return true;
  return ['complete','error','stopped'].includes(c?.status)&&c.attempts?.at(-1)?.status===c.status;
 }
