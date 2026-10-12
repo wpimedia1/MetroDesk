@@ -52,7 +52,7 @@ export function checkSpendingPlan(value){
   if(!Number.isSafeInteger(subtotal)||!Number.isSafeInteger(phase.total_usd)||phase.total_usd!==subtotal)errors.push(`${label}: declared total ${phase.total_usd} must equal item total ${subtotal} dollars.`);
   total+=subtotal;
  }
- for(const a of allocations)if(a&&totals.get(a.actor)!==a.amount_usd)errors.push(`${a.actor}: spending items total ${totals.get(a.actor)||0} but allocation is ${a.amount_usd} dollars.`);
+ for(const a of allocations)if(a&&(totals.get(a.actor)||0)!==a.amount_usd)errors.push(`${a.actor}: spending items total ${totals.get(a.actor)||0} but allocation is ${a.amount_usd} dollars.`);
  if(!Number.isSafeInteger(total)||total+value.reserve_usd!==value.budget_usd)errors.push(`Spending items (${total}) plus reserve (${value.reserve_usd}) must equal budget (${value.budget_usd}) dollars.`);
  return {valid:!errors.length,errors,total_usd:total};
 }
