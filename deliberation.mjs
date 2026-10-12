@@ -77,15 +77,20 @@ export function applyLedgerChanges(current,changes){
  const s=structuredClone(current);let phases=s.spending_plan.map(p=>({...p,items:[...(p.items||[])]}));let allocations=[...(s.allocations||[])];
  for(const id of list('remove_phases')){if(!phases.some(p=>p.id===id))errors.push(`remove_phases: unknown phase ${id}.`);phases=phases.filter(p=>p.id!==id);}
  for(const p of list('set_phases')){if(!p||typeof p.id!=='string'||!p.id.trim()||typeof p.label!=='string'||!p.label.trim()){errors.push('set_phases entries need id and label.');continue;}const at=phases.find(x=>x.id===p.id);if(at)at.label=p.label;else phases.push({id:p.id,label:p.label,items:[]});}
- for(const id of list('remove_items')){const at=phases.find(p=>p.items.some(i=>i.id===id));if(!at){errors.push(`remove_items: unknown item ${id}.`);continue;}at.items=at.items.filter(i=>i.id!==id);}
+ // Removals are checked against the current ledger, so removing a phase and its items together is valid.
+ const knownItems=new Set(s.spending_plan.flatMap(p=>(p.items||[]).map(i=>i.id))),knownActors=new Set(allocations.map(a=>a.actor));
+ for(const id of list('remove_items')){if(!knownItems.has(id)){errors.push(`remove_items: unknown item ${id}.`);continue;}for(const p of phases)p.items=p.items.filter(i=>i.id!==id);}
  for(const it of list('set_items')){
   if(!it||typeof it.id!=='string'||!it.id.trim()||typeof it.phase_id!=='string'){errors.push('set_items entries need phase_id, id, actor, amount_usd and purpose.');continue;}
   const target=phases.find(p=>p.id===it.phase_id);if(!target){errors.push(`set_items: item ${it.id} names unknown phase ${it.phase_id}; add it with set_phases.`);continue;}
   for(const p of phases)p.items=p.items.filter(i=>i.id!==it.id);
   const {phase_id,...item}=it;target.items.push(item);
  }
- for(const actor of list('remove_allocations')){if(!allocations.some(a=>a.actor===actor))errors.push(`remove_allocations: unknown actor ${actor}.`);allocations=allocations.filter(a=>a.actor!==actor);if(phases.some(p=>p.items.some(i=>i.actor===actor)))errors.push(`remove_allocations: ${actor} still has line items; remove or reassign them.`);}
+ const removedActors=list('remove_allocations');
+ for(const actor of removedActors){if(!knownActors.has(actor))errors.push(`remove_allocations: unknown actor ${actor}.`);allocations=allocations.filter(a=>a.actor!==actor);}
  for(const a of list('set_allocations')){if(!a||typeof a.actor!=='string'||!a.actor.trim()){errors.push('set_allocations entries need an actor.');continue;}const at=allocations.findIndex(x=>x.actor===a.actor);if(at>=0)allocations[at]={...allocations[at],...a};else allocations.push({...a});}
+ // An actor removed and not re-added must not keep line items in the final ledger.
+ for(const actor of removedActors)if(!allocations.some(a=>a.actor===actor)&&phases.some(p=>p.items.some(i=>i.actor===actor)))errors.push(`remove_allocations: ${actor} still has line items; remove or reassign them.`);
  if(typeof changes.narrative==='string')s.narrative=changes.narrative;
  if(Array.isArray(changes.assumptions))s.assumptions=changes.assumptions;
  if(Array.isArray(changes.unresolved_issues))s.unresolved_issues=changes.unresolved_issues;else errors.push('ledger_changes.unresolved_issues must be an array.');
@@ -128,7 +133,8 @@ export function contributionFormat(c,operation,allowResearch=true){
   resolutions:operation.kind==='revise'?list(resolutionSchema,100):{type:'array',items:resolutionSchema,maxItems:0},
   unresolved_issues:list(str(600),20),
   evidence_requests:operation.kind==='determine'?{type:'array',items:evidenceRequestSchema,maxItems:0}:list(evidenceRequestSchema,3),
-  proposal:proposal?{anyOf:[obj({recommendation:{type:'string',minLength:1,maxLength:1800},changes:list(str(600),12),...(c.mode==='scenario'&&operation.kind==='revise'?{ledger_changes:ledgerChangesSchema(c.constraints)}:{scenario:c.mode==='scenario'?lineItemScenarioSchema(c.constraints):{type:'null'}})}),{type:'null'}]}:{type:'null'},
+  // Once research is used up, a proposal turn can only contribute, so the proposal itself is required.
+  proposal:proposal?(p=>allowResearch?{anyOf:[p,{type:'null'}]}:p)(obj({recommendation:{type:'string',minLength:1,maxLength:1800},changes:list(str(600),12),...(c.mode==='scenario'&&operation.kind==='revise'?{ledger_changes:ledgerChangesSchema(c.constraints)}:{scenario:c.mode==='scenario'?lineItemScenarioSchema(c.constraints):{type:'null'}})})):{type:'null'},
   disposition:operation.kind==='vote'?{anyOf:[{type:'string',enum:['support','conditional_support','oppose']},{type:'null'}]}:{type:'null'},
   determination:operation.kind==='determine'?{anyOf:[obj({recommendation:{type:'string',minLength:1,maxLength:1800},tradeoffs:list(str(600),10),next_steps:list(str(600),10)}),{type:'null'}]}:{type:'null'}
  });
