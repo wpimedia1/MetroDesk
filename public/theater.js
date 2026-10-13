@@ -152,6 +152,8 @@ export function createTheater(host,onSelect){
   const project=v=>{const p=v.clone().project(camera);return {x:host.offsetLeft+(p.x*.5+.5)*host.clientWidth,y:host.offsetTop+(-p.y*.5+.5)*host.clientHeight,hidden:p.z>1};};
   for(const l of labels){const p=project(l.position);l.button.style.left=`${p.x}px`;l.button.style.top=`${p.y}px`;const actor=actors.find(a=>a.id===l.button.dataset.agent);
    l.button.classList.toggle('active',l.button.dataset.agent===(selected||active));l.button.dataset.vote=actor.vote||'';l.button.hidden=p.hidden;}
+  // Labels that would overlap after projection are stacked downward so every name and vote stays readable.
+  {const placed=[];for(const l of labels.filter(l=>!l.button.hidden).sort((a,b)=>parseFloat(a.button.style.top)-parseFloat(b.button.style.top))){const w=l.button.offsetWidth,h=l.button.offsetHeight,x=parseFloat(l.button.style.left);let y=parseFloat(l.button.style.top);for(let moved=true,n=0;moved&&n<labels.length;n++){moved=false;for(const q of placed)if(Math.abs(q.x-x)<(q.w+w)/2+2&&Math.abs(q.y-y)<(q.h+h)/2+2){y=q.y+(q.h+h)/2+2;moved=true;}}l.button.style.top=`${y}px`;placed.push({x,y,w,h});}}
   for(const actor of actors){if(actor.bubble.hidden)continue;const p=project(head(actor).add(new THREE.Vector3(0,.45,0)));actor.bubble.style.left=`${p.x}px`;actor.bubble.style.top=`${p.y}px`;}
   {const p=project(new THREE.Vector3(-6.2,.2,3.1));archiveLabel.style.left=`${p.x}px`;archiveLabel.style.top=`${p.y}px`;archiveLabel.classList.toggle('active',beam.visible);}
   if(!moderatorBubble.hidden){const p=project(new THREE.Vector3(0,5.2,1.5));moderatorBubble.style.left=`${p.x}px`;moderatorBubble.style.top=`${p.y}px`;}
