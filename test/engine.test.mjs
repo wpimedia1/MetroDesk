@@ -3,16 +3,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile,readdir} from 'node:fs/promises';
-import {initializeDeliberation,runDeliberation,respondToEvidence,operationSteps,OUTPUT_TOKENS,estimateRemaining,repairLedger} from '../deliberation.mjs';
+import {initializeDeliberation,runDeliberation,respondToEvidence,operationSteps,OUTPUT_TOKENS,repairLedger} from '../deliberation.mjs';
 import {createIO} from '../providers.mjs';
 import {inspectAcceptance} from '../acceptance.mjs';
 import {goodRun} from '../archive.mjs';
-import {pricingFrom,sessionUsage} from '../budget.mjs';
+import {pricingFrom,sessionUsage} from '../usage.mjs';
 import {renderFigures,proseMismatches,ledgerTotals} from '../public/figures.js';
 import {reportHTML} from '../report.mjs';
 import {simulatedProvider} from './simulated-provider.mjs';
 
-const pricing=pricingFrom({}),budget={cost_usd:5,tokens:2000000,minutes:30};
+const pricing=pricingFrom({});
 const brief='Hurricane Quillon made landfall near Panama City Beach as a Category 2 hurricane. Ten Panhandle counties are under a state of emergency and need cash advances for emergency work.';
 function session(){
  const text='County cash positions: Franklin payroll is at risk within two weeks and Calhoun requests a full advance for debris removal.';
@@ -23,7 +23,7 @@ function harness(options){
  const io=createIO({c,keys:{nebius:{key:'test-key',source:'test',version:1},tavily:{key:'test-key',source:'test',version:1},model:'nvidia/Nemotron-3-Ultra-550b-a55b'},save:async()=>{saves.n++;},fetchImpl:sim.fetchImpl,timeouts:options?.timeouts||{}});
  return {c,io,sim,saves};
 }
-const run=(h,b=budget,signal=new AbortController().signal)=>runDeliberation(h.c,h.io,signal,{budget:b,pricing});
+const run=(h,signal=new AbortController().signal)=>runDeliberation(h.c,h.io,signal,{pricing});
 
 test('a full run completes unattended in nine parallel steps and passes acceptance', async()=>{
  const h=harness();await run(h);
@@ -106,25 +106,6 @@ test('an open evidence request at the determination is recorded as unresolved, n
  assert.ok(c.deliberation.determination.unresolved_issues.some(x=>/not supplied before the determination/.test(x)));
 });
 
-test('the run stops cleanly before a step that would cross the cost limit, and resumes when the limit is raised', async()=>{
- const h=harness();const {c}=h;
- await run(h,{cost_usd:0.3,tokens:2000000,minutes:30});
- assert.equal(c.status,'budget_reached');assert.match(c.stop_reason,/^Cost limit/);
- assert.ok(sessionUsage(c).cost_usd<=0.3,'spending never crosses the limit');
- assert.equal(c.deliberation.active.length,0);
- assert.ok(c.provider_calls.every(r=>r.status==='succeeded'),'no request was cut off mid-flight');
- const done=c.deliberation.messages.length;assert.ok(done>0&&done<21);
- const estimate=estimateRemaining(structuredClone(c),{pricing});assert.ok(estimate.model_calls===21-done);
- await run(h,budget);
- assert.equal(c.status,'complete');assert.equal(inspectAcceptance(c).passed,true);
-});
-
-test('the token limit stops the run cleanly', async()=>{
- const h=harness();await run(h,{cost_usd:5,tokens:40000,minutes:30});
- assert.equal(h.c.status,'budget_reached');assert.match(h.c.stop_reason,/^Token limit/);
- assert.ok(sessionUsage(h.c).tokens<=40000);
-});
-
 test('a call that exceeds its time limit is cancelled and retried', async()=>{
  const h=harness({faults:{'r1-stability':['hang']},timeouts:{model:300}});
  await run(h);const {c}=h;
@@ -143,7 +124,7 @@ test('upstream errors are retried, then the run fails with a resumable error', a
 test('stop cancels in-flight requests and keeps accepted work', async()=>{
  const h=harness({latencyMs:30});const controller=new AbortController();
  const save=h.io.save;h.io.save=async x=>{await save(x);if(x.deliberation.messages.length>=3)controller.abort();};
- await run(h,budget,controller.signal);
+ await run(h,controller.signal);
  assert.equal(h.c.status,'stopped');assert.ok(h.c.deliberation.messages.length>=3);
  await run(h);assert.equal(h.c.status,'complete');assert.equal(inspectAcceptance(h.c).passed,true);
 });

@@ -1,20 +1,9 @@
-// Run budgets and the live meter. Costs are estimates: provider-reported usage multiplied by configured prices.
+// The live meter. Costs are estimates: provider-reported usage multiplied by configured prices.
 // Prices default to the Nebius Token Factory rate for nvidia/Nemotron-3-Ultra-550b-a55b ($1.00 per million input
 // tokens, $3.00 per million output tokens) and Tavily pay-as-you-go credits; set them in the environment if they change.
 const num=(value,fallback)=>{const n=Number(value);return Number.isFinite(n)&&n>=0?n:fallback;};
 export function pricingFrom(env={}){
  return {input_usd_per_million:num(env.NEBIUS_INPUT_USD_PER_MILLION,1),output_usd_per_million:num(env.NEBIUS_OUTPUT_USD_PER_MILLION,3),tavily_usd_per_credit:num(env.TAVILY_USD_PER_CREDIT,0.008)};
-}
-export function defaultBudget(env={}){
- return {cost_usd:num(env.METRODESK_BUDGET_USD,3),tokens:Math.round(num(env.METRODESK_BUDGET_TOKENS,1500000)),minutes:num(env.METRODESK_BUDGET_MINUTES,30)};
-}
-export function checkBudget(b){
- if(!b||typeof b!=='object')throw Error('Supply a budget.');
- const out={cost_usd:Number(b.cost_usd),tokens:Number(b.tokens),minutes:Number(b.minutes)};
- if(!(out.cost_usd>0&&out.cost_usd<=1000))throw Error('Cost limit must be between $0.01 and $1,000.');
- if(!(Number.isSafeInteger(out.tokens)&&out.tokens>=10000&&out.tokens<=100000000))throw Error('Token limit must be a whole number between 10,000 and 100,000,000.');
- if(!(out.minutes>=1&&out.minutes<=600))throw Error('Time limit must be between 1 and 600 minutes.');
- return out;
 }
 // Usage for one provider receipt. Nebius receipts without usage are counted from characters (about four per token)
 // and flagged as estimated.

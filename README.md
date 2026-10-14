@@ -42,7 +42,7 @@ The five agents have distinct instructions and persisted participant state. They
 
 Brief, Floor, Evidence and Decision are working views. The theater highlights real pending operations and accepted contributions; participant selection opens their contribution history. Sources open with exact cited passages. Recorded replay uses existing messages and makes no provider calls.
 
-Ready, Running, Finished, Failed, Stopped, Budget reached, Interrupted and Connection lost remain visible across views. While a step runs, the status names every agent in flight; the status band shows the estimated spend against the cost limit, tokens against the token limit, the current step of nine and an estimated finish time. Backend completion opens the Decision view. Connection lost means current status is unknown. Animation and recorded playback cannot overwrite the backend outcome.
+Ready, Running, Finished, Failed, Stopped, Interrupted and Connection lost remain visible across views. While a step runs, the status names every agent in flight; the status band shows the estimated spend, tokens used, the current step of nine and an estimated finish time. Backend completion opens the Decision view. Connection lost means current status is unknown. Animation and recorded playback cannot overwrite the backend outcome.
 
 Stop cancels the requests in flight. Resume keeps every accepted contribution and completed research and continues with the unfinished step. Server restarts mark active records interrupted. Completion means the determination exists; three revised rounds alone do not block unfinished final votes.
 
@@ -56,7 +56,7 @@ Only version 2 deliberation records are loaded; records from the earlier single-
 
 Records are local plaintext JSON in `data/`. `data/` is not tracked by Git. When a run ends, it is copied once per revision to `records/` as a read-only file if it is a completed live run: it passes acceptance (21 contributions, four proposal versions, four votes, a determination and linked provider receipts) and used Tavily search and extract. Its flaws are kept, not filtered: unverified citations, unreviewed or disputed objections and declined evidence stay in the record and the determination. `records/` is tracked by Git; review it before committing, since it contains the session inputs. Inputs go to Nebius; research queries and URLs go to Tavily. Provider keys are excluded from saved cases, reports and API configuration responses. Accepted messages link to their provider receipt and decision call. New receipts record requested response format, schema name, attempt and correction number alongside returned identifiers, usage and latency.
 
-## Validation, Repair and Budgets
+## Validation and Repair
 
 Source citations require exact passages in extracted text; snippets are leads. Passage matching does not verify semantic entailment, legal admissibility or the source's truth. Documents and retrieved content are untrusted inputs. The runtime does not execute embedded instructions or claim prompt-injection immunity.
 
@@ -70,13 +70,13 @@ Repair instead of reject. Only a reply that is not valid JSON for its turn is re
 - A misquote is replaced by the closest passage in the source when they share at least 70% of their words, and otherwise marked unverified and not counted as evidence.
 - Out-of-range change references are ignored, an addressed resolution with no valid reference is carried as deferred, resolutions of unknown objections are dropped, omitted objections are deferred, and missing reviews are recorded as unreviewed.
 
-Budgets. Each run has a cost, token and time limit, set before it starts with an estimate of the remaining work. The run stops cleanly before any step that could cross a limit, and resumes when the limit is raised. Each model request is cancelled after 120 seconds and each Tavily request after 60 seconds, then retried. Costs are estimates from provider-reported usage at configured prices: $1.00 per million input and $3.00 per million output tokens for Nemotron 3 Ultra on Token Factory, and $0.008 per Tavily credit. Override them with `NEBIUS_INPUT_USD_PER_MILLION`, `NEBIUS_OUTPUT_USD_PER_MILLION` and `TAVILY_USD_PER_CREDIT`; default limits with `METRODESK_BUDGET_USD` (3), `METRODESK_BUDGET_TOKENS` (1,500,000) and `METRODESK_BUDGET_MINUTES` (30); call limits with `METRODESK_MODEL_TIMEOUT_MS` and `METRODESK_RESEARCH_TIMEOUT_MS`.
+Time limits and meter. Each model request is cancelled after 120 seconds and each Tavily request after 60 seconds, then retried (`METRODESK_MODEL_TIMEOUT_MS`, `METRODESK_RESEARCH_TIMEOUT_MS`). The status band shows the estimated spend, tokens used, the current step of nine and an estimated finish time. Spend is estimated from provider-reported usage at configured prices: $1.00 per million input and $3.00 per million output tokens for Nemotron 3 Ultra on Token Factory, and $0.008 per Tavily credit (`NEBIUS_INPUT_USD_PER_MILLION`, `NEBIUS_OUTPUT_USD_PER_MILLION`, `TAVILY_USD_PER_CREDIT`).
 
 Each model request is bounded to 160,000 characters: the documents, this round's research excerpts (8,000 characters each), the current proposal and ledger, open objections and a compact history. Measured on the Front Range wildfire brief with the simulated provider, requests average about 41,000 characters (about 10,000 tokens).
 
 ## Verification
 
-`npm test` runs the engine offline against a simulated Nebius and Tavily backend (`test/simulated-provider.mjs`, used only by the tests): a full unattended run in nine steps that passes acceptance, cut-off and invalid replies, quote, reference and ledger repairs, evidence answered mid-run, the cost, token and time limits, call timeouts, upstream errors and stop. It makes no network requests.
+`npm test` runs the engine offline against a simulated Nebius and Tavily backend (`test/simulated-provider.mjs`, used only by the tests): a full unattended run in nine steps that passes acceptance, cut-off and invalid replies, quote, reference and ledger repairs, evidence answered mid-run, call timeouts, upstream errors and stop. It makes no network requests.
 
 
 Inspect an actual saved case without generating or replacing contributions: `node scripts/inspect-recorded-ui.mjs CASE_ID`. Set `BUNDLED_MODULES` to a `node_modules` directory that contains Playwright; `CHROME_PATH` overrides the default Chrome location. This produces desktop/mobile screenshots and diagnostics labeled recorded, read-only inspection. It makes no provider calls and cannot establish new live completion.
@@ -85,10 +85,10 @@ Start the current server with `npm start`, then execute acceptance from a second
 
 ```powershell
 npm run accept:live -- --case CASE_ID
-npm run accept:live -- --brief PATH_TO_BRIEF --require-research --budget 3
+npm run accept:live -- --brief PATH_TO_BRIEF --require-research
 ```
 
-Use `--base http://127.0.0.1:4410` for another local port, or `--base https://your-host` for an authenticated deployment. `--brief`, `--mode`, `--title` and `--objective` select a new inquiry. `--budget` sets the cost limit in US dollars; the runner prints the estimate before starting. `--case` resumes an existing v2 case, preserving its prior receipts and responses. The runner refuses to take ownership of an already running case and only stops a run matching its own run ID.
+Use `--base http://127.0.0.1:4410` for another local port, or `--base https://your-host` for an authenticated deployment. `--brief`, `--mode`, `--title` and `--objective` select a new inquiry. `--case` resumes an existing v2 case, preserving its prior receipts and responses. The runner refuses to take ownership of an already running case and only stops a run matching its own run ID.
 
 JSON, HTML and acceptance-inspection artifacts are written to `artifacts/`. Checks require three rounds, four proposal versions, 21 accepted contributions in step order (any order within a parallel step), four independent reviewer dispositions, a determination and linked successful provider receipts. `--require-research` additionally checks Tavily search/extract receipts and a cited challenge-to-revision dependency. Inspect the actual passages and proposal changes to establish material evidence influence; structural checks alone cannot prove it.
 

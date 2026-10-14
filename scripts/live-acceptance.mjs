@@ -24,12 +24,7 @@ try{
  if(!c.deliberation)throw Error('Acceptance requires a v2 deliberation case.');
  const baselineReceipts=c.provider_calls?.length||0;
  if(['running','recovering'].includes(c.status))throw Error('This case is already running. Acceptance will not take ownership of an existing run.');
- if(c.status!=='complete'){
-  const estimate=await request(`/api/cases/${c.id}/estimate`);
-  const budget={...(c.budget||config.default_budget),...(options.budget?{cost_usd:Number(options.budget)}:{})};
-  console.log(`Estimate for the remaining work: typical $${estimate.typical_cost_usd}, at most $${estimate.max_cost_usd} before retries. Cost limit $${budget.cost_usd}.`);
-  runRequested=true;await request(`/api/cases/${c.id}/run`,{run_id:runId,budget});started=true;
- }
+ if(c.status!=='complete'){runRequested=true;await request(`/api/cases/${c.id}/run`,{run_id:runId});started=true;}
  let previous;
  while(started){
   if(interrupted)throw Error('Acceptance interrupted; stopping the run it started.');

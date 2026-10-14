@@ -9,7 +9,7 @@ Target: 2 minutes 50 seconds. Record the working application after a successful 
 | 0:30-0:55 | Floor | The Negotiator submits a proposal. Analyst, Risk, Strategy and Stability receive it in separate model calls and respond to the actual preceding contributions. |
 | 0:55-1:15 | Evidence and cited passage | Show a real Tavily research request, the returned document, the requesting agent's cited passage, and the issue it addresses. |
 | 1:15-1:40 | Proposal versions and transcript | Show the recorded objection, the Negotiator's revision and the change it prompted. Do not claim a change caused by research unless the recorded exchange supports that statement. |
-| 1:40-2:00 | Status and continuity | Show the four reviewers challenging at the same time, the cost meter against its limit, the step count and the estimated finish, and any evidence request answered while the council continues. A completed session opens the Decision view. Do not stage an error as a live event. |
+| 1:40-2:00 | Status and continuity | Show the four reviewers challenging at the same time, the cost meter, the step count and the estimated finish, and any evidence request answered while the council continues. A completed session opens the Decision view. Do not stage an error as a live event. |
 | 2:00-2:25 | Decision | Show each reviewer's returned disposition, dissent, unresolved issues and next steps. Council support does not mean stakeholder consent. |
 | 2:25-2:40 | Readable report and JSON export | Show the usable decision record, cited evidence, proposal history and transcript. |
 | 2:40-2:50 | Result and access | Summarize the actual determination and show the verified judge URL. Reaffirm the model and services displayed earlier; do not introduce them only at the end. |

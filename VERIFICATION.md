@@ -13,6 +13,6 @@ A recorded run passes acceptance (21 accepted contributions, 4 proposal versions
 
 ## Run engine 3 (current)
 
-The recorded run above was produced by the earlier sequential engine; it still passes the current acceptance check (`npm test` verifies this). The current engine runs nine steps with parallel challenges and votes, server research once per agent per round, fixed output budgets, repair instead of rejection, non-blocking evidence and run budgets. It is verified offline by `npm test` against a simulated provider; no live run of engine 3 has been recorded yet.
+The recorded run above was produced by the earlier sequential engine; it still passes the current acceptance check (`npm test` verifies this). The current engine runs nine steps with parallel challenges and votes, server research once per agent per round, fixed output budgets, repair instead of rejection and non-blocking evidence. It is verified offline by `npm test` against a simulated provider; no live run of engine 3 has been recorded yet.
 
 Not done: a recorded live run of engine 3, judge-accessible URL, YouTube video, AI Cloud deployment, author provider feedback.

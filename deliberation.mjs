@@ -3,7 +3,7 @@ import {scenarioSchema,LEDGER_LIMITS} from './decision-contract.mjs';
 import {checkScenario,scenarioReview} from './scenario.mjs';
 import {registerDocuments,briefForModel} from './documents.mjs';
 import {ledgerTotals,renderFigures,usd} from './public/figures.js';
-import {sessionUsage} from './budget.mjs';
+import {sessionUsage} from './usage.mjs';
 
 export const participants=[
  {id:'negotiator',name:'Negotiator',mandate:'Propose workable decisions and concessions. Revise the full proposal in response to the reviewers; identify what changed and why.',focus:'allocation criteria and eligible costs'},
@@ -423,32 +423,7 @@ function prompt(c,op,maxTokens){
 const systemPrompt=(c,op,format)=>`${prompt(c,op,OUTPUT_TOKENS[op.kind])}\nResponse schema: ${JSON.stringify(format.json_schema.schema)}`;
 const BRIEF='Your previous reply was cut off at its fixed output limit. Return a complete, shorter JSON object: summary under 400 characters, at most two citations with short quotes, one sentence per rationale or explanation, at most one item per actor.';
 
-// ---------- Budgets (requirement 6) ----------
-function estimateCall(c,op){
- const sources=sourcesForOp(c,op),format=contributionFormat(c,op,sources.map(s=>s.id));
- const input=Math.ceil((modelPayload(c,op,sources).length+systemPrompt(c,op,format).length)/4);
- return {input_tokens:input,output_tokens:OUTPUT_TOKENS[op.kind]};
-}
-const schedulePosition=id=>operationSchedule().findIndex(op=>op.id===id);
-export function estimateRemaining(c,{pricing}){
- initializeDeliberation(c);
- const del=c.deliberation,steps=operationSteps(),done=new Set(del.completed_operations);let input=0,output=0,research=0,calls=0;
- for(const step of steps){const ops=step.ops.filter(op=>!done.has(op.id));if(!ops.length)continue;
-  if(researchSteps.has(step.number)){const round=researchSteps.get(step.number);research+=participants.filter(p=>!['done','failed'].includes(del.research[round]?.[p.id]?.status)).length;}
-  // Turns not yet researched or preceded by later messages are estimated with the sources and history they will carry:
-  // two research extracts (four more for a revision), about 150 tokens of history per earlier message, and the ledger.
-  for(const op of ops){const e=estimateCall(c,op),researched=del.research[op.round]?.[op.agent]?.status==='done';
-   const extra=(op.kind==='determine'||researched?0:2*SOURCE_CHARS/4)+(op.kind==='revise'?4*SOURCE_CHARS/4:0)+150*Math.max(0,schedulePosition(op.id)-del.messages.length);
-   input+=e.input_tokens+Math.round(extra);output+=e.output_tokens;calls++;}}
- const credits=research*4,cost=input/1e6*pricing.input_usd_per_million+output/1e6*pricing.output_usd_per_million+credits*pricing.tavily_usd_per_credit;
- const typical=input/1e6*pricing.input_usd_per_million+output*0.5/1e6*pricing.output_usd_per_million+credits*pricing.tavily_usd_per_credit;
- return {model_calls:calls,research_agents:research,input_tokens:input,max_output_tokens:output,tavily_credits:credits,max_cost_usd:Math.round(cost*100)/100,typical_cost_usd:Math.round(typical*100)/100,steps_remaining:steps.filter(s=>s.ops.some(op=>!done.has(op.id))).length,note:'Input is estimated from the current record; output is counted at each turn\'s full fixed budget for the maximum and at half for the typical figure. Retries add to both.'};
-}
-function stepProjection(c,ops,researchRound,pricing){
- let input=0,output=0;for(const op of ops){const e=estimateCall(c,op);input+=e.input_tokens;output+=e.output_tokens;}
- const credits=researchRound?participants.length*4:0;
- return {tokens:input+output,cost_usd:input/1e6*pricing.input_usd_per_million+output/1e6*pricing.output_usd_per_million+credits*pricing.tavily_usd_per_credit};
-}
+// ---------- Progress ----------
 const DEFAULT_STEP_SECONDS=45;
 function updateProgress(c,steps){
  const del=c.deliberation,done=steps.filter(s=>s.ops.every(op=>del.completed_operations.includes(op.id))).length,pr=c.progress||={};
@@ -496,38 +471,29 @@ async function runOperation(c,op,io,signal,attempt,publish){
   }
  }finally{del.active=del.active.filter(x=>x!==entry);}
 }
-export async function runDeliberation(c,io,signal,{budget,pricing}){
+export async function runDeliberation(c,io,signal,{pricing}){
  initializeDeliberation(c);const del=c.deliberation,steps=operationSteps();
  // Earlier engines kept a single pending operation and triage state; the step engine resumes from completed operations.
  del.operation=null;del.active=[];del.researching=[];if(del.triage){del.triage_log=[...(del.triage_log||[]),{...del.triage,superseded:'run engine 3 does not pause for triage'}];del.triage=null;}
- c.error='';delete c.stop_reason;c.status='running';c.started_at||=new Date().toISOString();delete c.finished_at;
- c.budget=budget;c.pricing=pricing;
- const attempt={number:c.attempts.length+1,status:'running',run_engine:3,started_at:new Date().toISOString(),budget,model_calls:0,search_calls:0,extract_calls:0};c.attempts.push(attempt);
- const started=Date.now(),limitMs=budget.minutes*60000,clock=AbortSignal.timeout(limitMs),run=AbortSignal.any([signal,clock]);
+ c.error='';c.status='running';c.started_at||=new Date().toISOString();delete c.finished_at;
+ c.pricing=pricing;
+ const attempt={number:c.attempts.length+1,status:'running',run_engine:3,started_at:new Date().toISOString(),model_calls:0,search_calls:0,extract_calls:0};c.attempts.push(attempt);
  const publish=async(kind,detail,extra={})=>{c.updated_at=new Date().toISOString();c.usage=sessionUsage(c);c.events.push({id:c.events.length+1,at:c.updated_at,kind,phase:kind==='research'||kind==='evidence'?'Observe':kind==='contribution'?'Act':kind==='finished'?'Evaluate':'Reason',detail,...extra});await io.save(c);};
- const stopAtBudget=async reason=>{c.status='budget_reached';c.stop_reason=reason;c.error=reason;c.phase='Evaluate';c.finished_at=new Date().toISOString();await publish('budget_reached',reason);};
  updateProgress(c,steps);
  try{
   for(const step of steps){
    const ops=step.ops.filter(op=>!del.completed_operations.includes(op.id));if(!ops.length)continue;
    const round=researchSteps.get(step.number),needsResearch=round&&participants.some(p=>!['done','failed'].includes(del.research[round]?.[p.id]?.status));
-   // Stop cleanly before a step that would cross the cost, token or time limit.
-   const used=sessionUsage(c),next=stepProjection(c,ops,needsResearch,pricing),elapsed=(Date.now()-started)/1000,avg=c.progress.step_seconds?.length?c.progress.step_seconds.reduce((a,b)=>a+b,0)/c.progress.step_seconds.length:DEFAULT_STEP_SECONDS;
-   const label=`step ${step.number} of ${steps.length} (${ops.map(op=>`${nameOf(op.agent)} ${op.kind}`).join(', ')})`;
-   if(used.cost_usd+next.cost_usd>budget.cost_usd){await stopAtBudget(`Cost limit: $${used.cost_usd.toFixed(2)} spent of $${budget.cost_usd.toFixed(2)}; ${label} can cost up to $${next.cost_usd.toFixed(2)}. Raise the cost limit to resume.`);break;}
-   if(used.tokens+next.tokens>budget.tokens){await stopAtBudget(`Token limit: ${used.tokens.toLocaleString('en-US')} used of ${budget.tokens.toLocaleString('en-US')}; ${label} can use up to ${next.tokens.toLocaleString('en-US')}. Raise the token limit to resume.`);break;}
-   if(elapsed+avg>budget.minutes*60){await stopAtBudget(`Time limit: ${Math.round(elapsed/60)} of ${budget.minutes} minutes used; ${label} takes about ${Math.round(avg)} seconds. Raise the time limit to resume.`);break;}
    const stepStart=Date.now();c.progress.current_step=step.number;
-   if(needsResearch)await researchRound(c,io,round,run,attempt,publish);
-   const results=await Promise.allSettled(ops.map(op=>runOperation(c,op,io,run,attempt,publish)));
+   if(needsResearch)await researchRound(c,io,round,signal,attempt,publish);
+   const results=await Promise.allSettled(ops.map(op=>runOperation(c,op,io,signal,attempt,publish)));
    const failed=results.find(r=>r.status==='rejected');if(failed)throw failed.reason;
    (c.progress.step_seconds||=[]).push(Math.round((Date.now()-stepStart)/100)/10);updateProgress(c,steps);c.usage=sessionUsage(c);await io.save(c);
   }
-  if(c.status==='running'){c.status='complete';c.phase='Evaluate';c.finished_at=new Date().toISOString();delete c.progress.current_step;updateProgress(c,steps);await publish('finished','Determination ready. Agreement and unresolved issues are recorded.');}
+  c.status='complete';c.phase='Evaluate';c.finished_at=new Date().toISOString();delete c.progress.current_step;updateProgress(c,steps);await publish('finished','Determination ready. Agreement and unresolved issues are recorded.');
  }catch(e){
   del.active=[];del.researching=[];
   if(signal.aborted){c.status='stopped';c.error='Stopped by reviewer.';}
-  else if(clock.aborted){c.status='budget_reached';c.stop_reason=`Time limit: the ${budget.minutes}-minute limit was reached during a step; in-flight requests were cancelled and accepted contributions are kept. Raise the time limit to resume.`;c.error=c.stop_reason;}
   else{c.status='error';c.error=e.message;}
   c.finished_at=new Date().toISOString();await publish(c.status,c.error);
  }

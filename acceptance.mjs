@@ -9,7 +9,7 @@ function legacyRespondsTo(prefix,op,expected){
 }
 export function inspectAcceptance(c,{requireResearch=false,baselineReceipts=0}={}){
  const issues=[],d=c.deliberation,schedule=operationSchedule();
- if(c.status!=='complete'||!d?.determination)issues.push(c.status==='budget_reached'?`Stopped at the run budget: ${c.stop_reason||''}`.trim():'No completed determination.');
+ if(c.status!=='complete'||!d?.determination)issues.push('No completed determination.');
  if(c.record_version!==2||!d)return {passed:false,issues:[...issues,'Not a v2 deliberation record.']};
  const finalVersion=schedule.filter(op=>['propose','revise'].includes(op.kind)).length;
  if(c.rounds.length!==3||d.proposals.length!==finalVersion||d.messages.length!==schedule.length)issues.push(`Expected three rounds, ${finalVersion} proposal versions and ${schedule.length} accepted contributions.`);
@@ -71,7 +71,7 @@ export function inspectAcceptance(c,{requireResearch=false,baselineReceipts=0}={
 
 export function parseAcceptanceArgs(args){
  const options={base:'http://127.0.0.1:4400',mode:'evidence',requireResearch:false};
- const names=new Set(['base','case','brief','mode','title','objective','budget']);
+ const names=new Set(['base','case','brief','mode','title','objective']);
  for(let i=0;i<args.length;i++){
   const name=args[i].replace(/^--/,'');
   if(args[i]==='--require-research'){options.requireResearch=true;continue;}
@@ -81,7 +81,6 @@ export function parseAcceptanceArgs(args){
  if(options.case&&options.brief)throw Error('Choose --case or --brief, not both.');
  if(options.case&&!/^[a-f0-9-]{36}$/.test(options.case))throw Error('Invalid case ID.');
  if(!['scenario','evidence'].includes(options.mode))throw Error('Invalid mode.');
- if(options.budget!==undefined&&!(Number(options.budget)>0))throw Error('--budget is a cost limit in US dollars.');
  const url=new URL(options.base);
  if(url.username||url.password||url.search||url.hash||url.pathname!=='/'||(!['https:','http:'].includes(url.protocol))||(url.protocol==='http:'&&!['127.0.0.1','localhost','[::1]'].includes(url.hostname)))throw Error('Use an HTTPS origin, or HTTP localhost, without embedded credentials.');
  options.base=url.origin;return options;
@@ -91,5 +90,5 @@ export function parseAcceptanceArgs(args){
 // interrupted is terminal on its own; other terminal states wait for the attempt to record them.
 export function runFinished(c){
  if(c?.status==='interrupted')return true;
- return ['complete','error','stopped','budget_reached'].includes(c?.status)&&c.attempts?.at(-1)?.status===c.status;
+ return ['complete','error','stopped'].includes(c?.status)&&c.attempts?.at(-1)?.status===c.status;
 }

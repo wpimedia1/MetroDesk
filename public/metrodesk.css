@@ -40,10 +40,8 @@
 .session-actions #delete{margin-left:18px;color:#a33a2b;border-color:#e9b0a6}.session-actions #delete:hover:not(:disabled){background:#fdf1ee}
 
 .status-meta #status-cost,.status-meta #status-tokens{font-variant-numeric:tabular-nums}.status-meta #status-cost:empty,.status-meta #status-tokens:empty,.status-meta #status-eta:empty{display:none}
-.status-band[data-state=budget_reached]{background:#f7edda;border-color:#ad7c20}.status-band[data-state=budget_reached] .status-symbol{background:#ad7c20}
 .evidence-banner .answer-evidence,.objection .answer-evidence{min-height:28px;padding:4px 8px;font-size:12px;margin:2px 4px 2px 0;background:#fff}
 .corrections{margin-top:8px;font-size:12px;color:var(--muted)}.corrections summary{cursor:pointer}.corrections .list{margin:4px 0 0}
-#run-estimate{background:#eef3f2;padding:12px 14px;font-size:13px}
 
 /* Floor: the stage and the contributions feed share one viewport-height row, so the feed scrolls inside its column
    and the page does not scroll twice. The stage heading is compact so the theater itself stays visible. */

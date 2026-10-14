@@ -15,22 +15,21 @@ export function sessionStatus(c,lost=false){
  if(lost)return {state:'connection_lost',title:'Connection lost',detail:'Session status is unknown. Reconnecting to the server.'};
  if(!c)return {state:'ready',title:'Ready',detail:'Open a session to begin.'};
  const state=c.status,open=(c.deliberation?.evidence_requests||[]).filter(e=>e.status==='open').length;
- const title={ready:'Ready',running:'Running',recovering:'Recovering',complete:'Finished',error:'Failed',stopped:'Stopped',interrupted:'Interrupted',budget_reached:'Budget reached',awaiting_evidence:'Interrupted',needs_triage:'Interrupted'}[state]||state;
+ const title={ready:'Ready',running:'Running',recovering:'Recovering',complete:'Finished',error:'Failed',stopped:'Stopped',interrupted:'Interrupted',awaiting_evidence:'Interrupted',needs_triage:'Interrupted'}[state]||state;
  const evidence=open?` / ${open} evidence request${open===1?'':'s'} open (answer any time)`:'';
  const detail=state==='complete'?(c.deliberation?.determination?`Determination ready / ${c.deliberation.determination.agreement.status} agreement${c.deliberation.determination.unresolved_issues.length?' / unresolved issues remain':''}`:'No determination recorded.')
   :state==='error'||state==='stopped'?c.error
-  :state==='budget_reached'?c.stop_reason||c.error
   :['interrupted','awaiting_evidence','needs_triage'].includes(state)?'The server restarted or an earlier engine paused this session. Resume to continue from the last accepted contribution.'
   :live(c)?`${activityLine(c)}${evidence}`
   :`Brief ready. Begin deliberation when ready.${evidence}`;
  return {state,title,detail};
 }
 const money=n=>'$'+Number(n||0).toFixed(2);
-// Live meter (requirement 6): spend against the run limits and the estimated finish time.
+// Live meter: estimated spend, tokens used and the estimated finish time.
 export function meterText(c){
- const u=c?.usage,b=c?.budget,p=c?.progress;
- if(!u||!b)return {cost:'',tokens:'',eta:''};
- return {cost:`${money(u.cost_usd)} of ${money(b.cost_usd)}${u.estimated?' (est.)':''}`,tokens:`${Number(u.tokens).toLocaleString('en-US')} of ${Number(b.tokens).toLocaleString('en-US')} tokens`,
+ const u=c?.usage,p=c?.progress;
+ if(!u)return {cost:'',tokens:'',eta:''};
+ return {cost:`${money(u.cost_usd)} spent${u.estimated?' (est.)':''}`,tokens:`${Number(u.tokens).toLocaleString('en-US')} tokens`,
   eta:live(c)&&p?.eta_at?`Step ${Math.min((p.steps_done||0)+1,p.steps_total)} of ${p.steps_total} / finish about ${new Date(p.eta_at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`:p?.steps_total?`${p.steps_done||0} of ${p.steps_total} steps`:''};
 }
 export function messageHTML(c,m,color='#06796f'){

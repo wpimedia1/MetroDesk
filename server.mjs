@@ -3,7 +3,7 @@ import {readFile,mkdir,readdir,unlink} from 'node:fs/promises';
 import {randomUUID,createHash} from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {initializeDeliberation,runDeliberation,respondToEvidence,estimateRemaining} from './deliberation.mjs';
+import {initializeDeliberation,runDeliberation,respondToEvidence} from './deliberation.mjs';
 import {reportHTML} from './report.mjs';
 import {writeRecord} from './record-store.mjs';
 import {archiveRecord} from './archive.mjs';
@@ -11,7 +11,7 @@ import {createAccess} from './access.mjs';
 import {providerError} from './provider-errors.mjs';
 import {createIO} from './providers.mjs';
 import {createCredentialStore} from './credential-status.mjs';
-import {pricingFrom,defaultBudget,checkBudget,sessionUsage} from './budget.mjs';
+import {pricingFrom,sessionUsage} from './usage.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const inherited={...process.env};
 try{process.loadEnvFile(path.join(root,'.env'));}catch{}
@@ -19,11 +19,11 @@ const port=Number(process.env.PORT||4400),host=process.env.HOST||'127.0.0.1',bas
 const authorized=createAccess({host,origin:base,username:process.env.METRODESK_USERNAME,password:process.env.METRODESK_PASSWORD});
 const credentials=createCredentialStore(inherited,process.env);
 const config={model:process.env.NEBIUS_MODEL||'nvidia/Nemotron-3-Ultra-550b-a55b'};
-// Run limits and per-call time limits (requirement 6). Prices drive the live cost meter.
-const pricing=pricingFrom(process.env),budgetDefaults=defaultBudget(process.env);
+// Per-call time limits; prices drive the live cost meter.
+const pricing=pricingFrom(process.env);
 const ms=(v,d)=>{const n=Number(v);return Number.isSafeInteger(n)&&n>=1000?n:d;};
 const timeouts={model:ms(process.env.METRODESK_MODEL_TIMEOUT_MS,120000),research:ms(process.env.METRODESK_RESEARCH_TIMEOUT_MS,60000)};
-function publicConfig(){const providers=credentials.public();return {nebius:providers.nebius.configured,tavily:providers.tavily.configured,providers,model:config.model,version:'metrodesk-1',runtime_contract:3,pricing,default_budget:budgetDefaults,call_timeouts_ms:timeouts};}
+function publicConfig(){const providers=credentials.public();return {nebius:providers.nebius.configured,tavily:providers.tavily.configured,providers,model:config.model,version:'metrodesk-1',runtime_contract:3,pricing,call_timeouts_ms:timeouts};}
 const cases=new Map(), jobs=new Map(),streams=new Map(),writes=new Map();
 // Read once at startup so a later environment change cannot redirect live-record archives.
 const recordsDir=process.env.METRODESK_RECORDS_DIR||path.join(root,'records');
@@ -64,10 +64,9 @@ http.createServer(async(req,res)=>{
     if(text.length>60000)throw Error('Extracted text exceeds 60,000 characters. Submit a smaller document.');
     return send(res,200,{text,notes,sha256:createHash('sha256').update(bytes).digest('hex')});
   }
-  const match=p.match(/^\/api\/cases\/([a-f0-9-]+)(?:\/(run|stop|export|report|stream|delete|configure|evidence|estimate))?$/);
+  const match=p.match(/^\/api\/cases\/([a-f0-9-]+)(?:\/(run|stop|export|report|stream|delete|configure|evidence))?$/);
   if(match){const c=cases.get(match[1]);if(!c)return send(res,404,{error:'Inquiry not found.'});const action=match[2];
     if(!action || action==='export')return send(res,200,c);
-    if(action==='estimate')return send(res,200,{...estimateRemaining(structuredClone(c),{pricing}),spent:sessionUsage({...c,pricing}),budget:c.budget||budgetDefaults,pricing});
     if(action==='report'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Disposition':`inline; filename="metrodesk-${c.id}.html"`,'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"});return res.end(reportHTML(c));}
     if(action==='stream'){
      res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});res.write(`id: ${c.revision||0}\nevent: state\ndata: ${JSON.stringify({revision:c.revision||0})}\n\n`);
@@ -83,7 +82,7 @@ http.createServer(async(req,res)=>{
     // Evidence can be answered at any time, including while the council runs; later turns use it.
     if(action==='evidence'){const b=await body(req);respondToEvidence(c,b.responses);await save(c);return send(res,200,c);}
     if(action==='stop'){const b=await body(req);if(b.run_id&&b.run_id!==c.run_id)return send(res,409,{error:'Run ownership changed; not stopped.'});jobs.get(c.id)?.controller.abort();return send(res,200,{stopping:true,run_id:c.run_id});}
-    if(action==='run'){const b=await body(req);if(b.run_id&&!/^[a-f0-9-]{36}$/.test(b.run_id))throw Error('Invalid run ID.');if(jobs.has(c.id))throw Error('This council is already running.');if(jobs.size)throw Error('One council can run at a time.');const keys=credentials.snapshot();if(!keys.nebius.key||!keys.tavily.key)throw Error('Connect Nebius and Tavily in Connections before starting.');if(c.deliberation.determination)throw Error('Session complete. Create a follow-up inquiry.');const budget=checkBudget(b.budget||c.budget||budgetDefaults);const controller=new AbortController();c.run_id=b.run_id||randomUUID();c.status='running';const io=createIO({c,keys:{...keys,model:config.model},save,credentials,timeouts});const done=runDeliberation(c,io,controller.signal,{budget,pricing}).catch(e=>console.error('Council persistence failed:',e.code||e.name)).then(()=>archiveRecord(recordsDir,c).catch(e=>console.error('Live record archive failed:',e.message))).finally(()=>jobs.delete(c.id));jobs.set(c.id,{controller,done});return send(res,202,{started:true,run_id:c.run_id});}
+    if(action==='run'){const b=await body(req);if(b.run_id&&!/^[a-f0-9-]{36}$/.test(b.run_id))throw Error('Invalid run ID.');if(jobs.has(c.id))throw Error('This council is already running.');if(jobs.size)throw Error('One council can run at a time.');const keys=credentials.snapshot();if(!keys.nebius.key||!keys.tavily.key)throw Error('Connect Nebius and Tavily in Connections before starting.');if(c.deliberation.determination)throw Error('Session complete. Create a follow-up inquiry.');const controller=new AbortController();c.run_id=b.run_id||randomUUID();c.status='running';const io=createIO({c,keys:{...keys,model:config.model},save,credentials,timeouts});const done=runDeliberation(c,io,controller.signal,{pricing}).catch(e=>console.error('Council persistence failed:',e.code||e.name)).then(()=>archiveRecord(recordsDir,c).catch(e=>console.error('Live record archive failed:',e.message))).finally(()=>jobs.delete(c.id));jobs.set(c.id,{controller,done});return send(res,202,{started:true,run_id:c.run_id});}
   }
   if(p.startsWith('/api/'))return send(res,404,{error:'Not found.'});
   let file=p==='/'?'/index.html':p;
