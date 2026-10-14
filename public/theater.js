@@ -157,6 +157,9 @@ export function createTheater(host,onSelect){
   for(const actor of actors){if(actor.bubble.hidden)continue;const p=project(head(actor).add(new THREE.Vector3(0,.45,0)));actor.bubble.style.left=`${p.x}px`;actor.bubble.style.top=`${p.y}px`;}
   {const p=project(new THREE.Vector3(-6.2,.2,3.1));archiveLabel.style.left=`${p.x}px`;archiveLabel.style.top=`${p.y}px`;archiveLabel.classList.toggle('active',beam.visible);}
   if(!moderatorBubble.hidden){const p=project(new THREE.Vector3(0,5.2,1.5));moderatorBubble.style.left=`${p.x}px`;moderatorBubble.style.top=`${p.y}px`;}
+  // Speech bubbles never cover the stage heading: a bubble that would overlap it is moved to start just below it.
+  {const heading=host.querySelector('.stage-heading')||document.querySelector('.stage-heading');if(heading){const layer=bubbleLayer.getBoundingClientRect(),h=heading.getBoundingClientRect();
+   for(const el of [moderatorBubble,...actors.map(a=>a.bubble)]){if(el.hidden)continue;const b=el.getBoundingClientRect();if(b.left<h.right&&h.left<b.right&&b.top<h.bottom&&h.top<b.bottom)el.style.top=`${h.bottom-layer.top+8+b.height}px`;}}}
   lastTime=time;frame=requestAnimationFrame(animate);
  }
  frame=requestAnimationFrame(animate);
