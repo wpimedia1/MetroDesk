@@ -18,7 +18,7 @@ export function simulatedProvider({faults={},latencyMs=5,pageChars=0}={}){
    if(url!==NEBIUS_CHAT)throw Error(`Unexpected URL ${url}`);
    const user=data.messages[1].content,payload=JSON.parse(user.split('\n\nCORRECTION: ')[0]),op=payload.operation;
    const n=(state.attemptsByOp.get(op.id)||0)+1;state.attemptsByOp.set(op.id,n);
-   state.calls.push({url,op:op.id,attempt:n,max_tokens:data.max_tokens,correction:user.includes('\n\nCORRECTION: '),sources:payload.sources.map(s=>s.id)});
+   state.calls.push({url,op:op.id,attempt:n,max_tokens:data.max_tokens,correction:user.includes('\n\nCORRECTION: '),thinking:data.chat_template_kwargs?.enable_thinking,sources:payload.sources.map(s=>s.id)});
    const fault=faults[op.id]?.[n-1];
    if(fault==='hang'){await wait(3600000,init.signal);}
    await wait(latencyMs,init.signal);
