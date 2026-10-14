@@ -15,7 +15,9 @@ const reviewers=participants.slice(1),nameOf=id=>participants.find(p=>p.id===id)
 
 // Requirement 1: every turn type has a fixed output budget. A cut-off reply is retried once at the same budget with a
 // shorter-reply instruction; the budget never grows.
-export const OUTPUT_TOKENS=Object.freeze({propose:4096,challenge:2560,revise:4096,vote:2048,determine:3072});
+// Nemotron 3 reasons before answering and its reasoning tokens count against max_tokens, so every turn has the same
+// fixed 16,384-token budget for reasoning plus the answer.
+export const OUTPUT_TOKENS=Object.freeze({propose:16384,challenge:16384,revise:16384,vote:16384,determine:16384});
 // Only invalid JSON (or a reply that does not fit the schema) is rejected and retried, at most twice.
 export const MAX_ATTEMPTS=3;
 export const PAYLOAD_LIMIT=160000;

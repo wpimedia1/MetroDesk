@@ -39,7 +39,7 @@ test('a full run completes unattended in nine parallel steps and passes acceptan
  // Requirement 1: every model call used its fixed output budget.
  for(const r of c.provider_calls.filter(r=>r.provider==='Nebius'))assert.equal(r.requested_max_tokens,OUTPUT_TOKENS[d.messages.find(m=>m.operation_id===r.operation_id).kind]);
  assert.equal(c.attempts.at(-1).model_calls,21);
- assert.ok(sim.state.calls.filter(x=>x.op).every(x=>x.thinking===false),'every model call turns reasoning off');
+ assert.ok(sim.state.calls.filter(x=>x.op).every(x=>x.thinking===undefined),'reasoning is left on');
  // Requirement 2: the server writes the figures.
  const totals=ledgerTotals(d.proposals.at(-1).scenario,4675000);
  assert.deepEqual(proseMismatches(d.determination.recommendation,totals),[]);

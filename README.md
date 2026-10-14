@@ -62,7 +62,7 @@ Source citations require exact passages in extracted text; snippets are leads. P
 
 Supplied events, objectives and constraints are the planning premises, not claims agents must prove happened. Uploaded documents are registered as extracted sources with their filename, original upload hash and supplied-document provenance, so agents can cite them. A supplied-document citation is not independent corroboration. The response schema is one flat object per turn type, sent both as the structured-output format and in the instructions, with a length cap on every field and list.
 
-Bounded output. Each turn type has a fixed output budget: 4,096 tokens for a proposal or revision, 2,560 for a challenge, 2,048 for a vote and 3,072 for the determination. A reply cut off at its budget is retried once at the same budget with an instruction to answer more briefly; the budget never grows.
+Bounded output. Nemotron 3 reasons before answering, and its reasoning counts against the output budget, so every turn has the same fixed 16,384-token budget. A reply cut off at its budget is retried once at the same budget with an instruction to answer more briefly; the budget never grows.
 
 Repair instead of reject. Only a reply that is not valid JSON for its turn is rejected and retried, at most three attempts in all. Everything else is corrected on the first try and each correction is recorded on the message and in the report:
 
