@@ -2,7 +2,8 @@ import {randomUUID} from 'node:crypto';
 import {providerError} from './provider-errors.mjs';
 
 // Persist only request metadata, never credentials, request headers or private reasoning.
-export async function providerCall(c,save,{url,key,data,signal,metadata={},credentialSource='unspecified',fetchImpl=fetch,onOutcome=()=>{}}) {
+// Every request has its own time limit; when it expires the request is cancelled and recorded as timed_out.
+export async function providerCall(c,save,{url,key,data,signal,metadata={},credentialSource='unspecified',fetchImpl=fetch,onOutcome=()=>{},timeoutMs}) {
   c.provider_calls ||= [];
   const provider=new URL(url).hostname.includes('tavily')?'Tavily':'Nebius';
   const record={id:randomUUID(),provider,endpoint:url,credential_source:credentialSource,model:data.model||null,started_at:new Date().toISOString(),status:'pending',http_status:null,request_id:null,response_id:null,usage:null};
@@ -12,12 +13,15 @@ export async function providerCall(c,save,{url,key,data,signal,metadata={},crede
   }
   if(typeof metadata.agent==='string')record.agent=metadata.agent;
   if(typeof metadata.operation_id==='string')record.operation_id=metadata.operation_id;
-  for(const field of ['attempt','call','correction_attempt'])if(Number.isSafeInteger(metadata[field]))record[field]=metadata[field];
+  if(typeof metadata.purpose==='string')record.purpose=metadata.purpose;
+  for(const field of ['attempt','call','correction_attempt','round','run_engine'])if(Number.isSafeInteger(metadata[field]))record[field]=metadata[field];
+  const body=JSON.stringify(data);record.request_characters=body.length;
   c.provider_calls.push(record);await save(c);
   const start=Date.now();
   try {
-    const timeout=AbortSignal.timeout(provider==='Nebius'?600000:180000);
-    const r=await fetchImpl(url,{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify(data),signal:signal?AbortSignal.any([signal,timeout]):timeout});
+    const limit=Number.isSafeInteger(timeoutMs)&&timeoutMs>0?timeoutMs:provider==='Nebius'?120000:60000;record.timeout_ms=limit;
+    const timeout=AbortSignal.timeout(limit);
+    const r=await fetchImpl(url,{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body,signal:signal?AbortSignal.any([signal,timeout]):timeout});
     record.http_status=r.status;
     record.request_id=r.headers.get('x-request-id')||r.headers.get('request-id')||null;
     if(!r.ok){
@@ -30,7 +34,7 @@ export async function providerCall(c,save,{url,key,data,signal,metadata={},crede
       throw Error(providerError(provider,r.status)+(detail?` Provider response: ${detail}`:''));
     }
     const result=await r.json();
-    if(provider==='Nebius')record.finish_reason=result.choices?.[0]?.finish_reason||null;
+    if(provider==='Nebius'){record.finish_reason=result.choices?.[0]?.finish_reason||null;record.response_characters=String(result.choices?.[0]?.message?.content||'').length;}
     record.request_id ||= typeof result.request_id==='string'?result.request_id:null;
     record.response_id=typeof result.id==='string'?result.id:null;
     record.model=typeof result.model==='string'?result.model:record.model;
@@ -40,9 +44,10 @@ export async function providerCall(c,save,{url,key,data,signal,metadata={},crede
     }
     record.status='succeeded';return result;
   }catch(e){
-    record.status=signal?.aborted?'cancelled':'failed';
+    const timedOut=!signal?.aborted&&(e.name==='TimeoutError'||e.cause?.name==='TimeoutError');
+    record.status=signal?.aborted?'cancelled':timedOut?'timed_out':'failed';
     const networkCode=e.cause?.code;
-    record.error=networkCode?`${provider} connection failed (${networkCode}). No provider response received.`:e.message;
-    throw Error(record.error);
+    record.error=timedOut?`${provider} request exceeded its ${record.timeout_ms/1000}-second limit and was cancelled.`:networkCode?`${provider} connection failed (${networkCode}). No provider response received.`:e.message;
+    throw Object.assign(Error(record.error),{code:timedOut?'PROVIDER_TIMEOUT':networkCode?'PROVIDER_CONNECTION':record.http_status?'PROVIDER_HTTP':'PROVIDER_FAILED',http_status:record.http_status});
   }finally{record.duration_ms=Date.now()-start;record.finished_at=new Date().toISOString();onOutcome(record);await save(c);}
 }

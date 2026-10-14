@@ -14,7 +14,7 @@ async function request(route,data){
 let c,started=false,runRequested=false,interrupted=false;const runId=randomUUID();
 process.on('SIGINT',()=>{interrupted=true;});process.on('SIGTERM',()=>{interrupted=true;});
 try{
- const config=await request('/api/config');if(config.runtime_contract!==2)throw Error('Restart the server with the current MetroDesk runtime before acceptance.');
+ const config=await request('/api/config');if(config.runtime_contract!==3)throw Error('Restart the server with the current MetroDesk runtime before acceptance.');
  if(options.case)c=await request('/api/cases/'+options.case);
  else{
   if(!options.brief)throw Error('Supply --case CASE_ID or --brief PATH.');
@@ -24,12 +24,17 @@ try{
  if(!c.deliberation)throw Error('Acceptance requires a v2 deliberation case.');
  const baselineReceipts=c.provider_calls?.length||0;
  if(['running','recovering'].includes(c.status))throw Error('This case is already running. Acceptance will not take ownership of an existing run.');
- if(c.status!=='complete'){runRequested=true;await request(`/api/cases/${c.id}/run`,{run_id:runId});started=true;}
+ if(c.status!=='complete'){
+  const estimate=await request(`/api/cases/${c.id}/estimate`);
+  const budget={...(c.budget||config.default_budget),...(options.budget?{cost_usd:Number(options.budget)}:{})};
+  console.log(`Estimate for the remaining work: typical $${estimate.typical_cost_usd}, at most $${estimate.max_cost_usd} before retries. Cost limit $${budget.cost_usd}.`);
+  runRequested=true;await request(`/api/cases/${c.id}/run`,{run_id:runId,budget});started=true;
+ }
  let previous;
  while(started){
   if(interrupted)throw Error('Acceptance interrupted; stopping the run it started.');
   c=await request(`/api/cases/${c.id}`);
-  const state=[c.status,c.deliberation.operation?.id,c.deliberation.messages.length].join(' / ');
+  const state=[c.status,(c.deliberation.active||[]).map(a=>a.operation_id).join('+')||'-',c.deliberation.messages.length,c.usage?`$${c.usage.cost_usd.toFixed(2)}`:''].join(' / ');
   if(previous!==state){console.log(state);previous=state;}
   if(runFinished(c)){started=false;break;}
   await sleep(2000);

@@ -1,7 +1,7 @@
 import {readFile,readdir,access} from 'node:fs/promises';
 import path from 'node:path';
 try{process.loadEnvFile('.env');}catch{}
-const roots=['public','scripts','docs'];
+const roots=['public','scripts','docs','test'];
 const files=['.env.example','.gitignore','README.md','LICENSE','VERIFICATION.md','package.json',...(await readdir('.')).filter(p=>p.endsWith('.mjs'))];
 async function collect(root){for(const item of await readdir(root,{withFileTypes:true})){const name=path.join(root,item.name);if(item.isDirectory())await collect(name);else files.push(name);}}
 for(const root of roots)await collect(root);

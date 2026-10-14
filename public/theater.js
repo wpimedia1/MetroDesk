@@ -67,7 +67,7 @@ export function createTheater(host,onSelect){
  for(const actor of actors)actor.bubble=bubble(actor.color);
  const moderatorBubble=bubble('#f1f5ef');
  const archiveLabel=document.createElement('div');archiveLabel.className='archive-label';archiveLabel.textContent='Research archive';bubbleLayer.append(archiveLabel);
- let active=null,current=null,selected=null,zoomed=false,frame,lastTime=0,activity='idle',boardVersion=null,boardPulse=0,threadKey='';
+ let active=null,speaking=[],researching=[],current=null,selected=null,zoomed=false,frame,lastTime=0,activity='idle',boardVersion=null,boardPulse=0,threadKey='';
  const target=new THREE.Vector3(0,.8,0),lookTarget=new THREE.Vector3(0,.8,0),cameraGoal=new THREE.Vector3(),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  function resize(){renderer.setSize(host.clientWidth,host.clientHeight,false);camera.aspect=host.clientWidth/Math.max(host.clientHeight,1);camera.updateProjectionMatrix();}
  const observer=new ResizeObserver(resize);observer.observe(host);resize();
@@ -91,37 +91,40 @@ export function createTheater(host,onSelect){
   return shown.length;
  }
  function showBubble(el,html,kind){el.innerHTML=html;el.className='speech-bubble'+(kind?' '+kind:'');el.hidden=false;}
+ // Several agents can hold the floor at once (the four challenges and the four votes run in parallel), and the
+ // server researches for all five agents at the start of a round.
  function setState(c,agent){
   current=c;updateDisplay(c);selected=agent||null;
-  const d=c?.deliberation,messages=d?.messages||[],last=messages.at(-1),op=d?.operation,running=['running','recovering'].includes(c?.status);
-  const awaiting=c?.status==='awaiting_evidence';
-  active=running?op?.agent:last?.agent;
-  activity=running?(op?.pending_tool?op.pending_tool.action:'thinking'):awaiting?'evidence':last?'spoken':'idle';
+  const d=c?.deliberation,messages=d?.messages||[],last=messages.at(-1),running=['running','recovering'].includes(c?.status);
+  const inFlight=running?(d?.active||[]):[];
+  researching=running?(d?.researching||[]):[];
+  speaking=inFlight.map(a=>a.agent);
+  active=speaking[0]||researching[0]||(running?null:last?.agent)||null;
+  activity=researching.length?'research':inFlight.length?'thinking':last?'spoken':'idle';
   for(const actor of actors){actor.bubble.hidden=true;actor.vote=null;}
   moderatorBubble.hidden=true;
   for(const v of d?.dispositions||[]){const actor=actors.find(a=>a.id===v.agent);if(actor)actor.vote=v.disposition;}
-  const speakerBubble=actors.find(a=>a.id===active)?.bubble||(active==='moderator'?moderatorBubble:null);
-  if(running&&speakerBubble){
-   const tool=op.pending_tool;
-   showBubble(speakerBubble,tool?`<b>${tool.action==='search'?'SEARCHING':'EXTRACTING'}</b>${esc(clip(tool.action==='search'?tool.query:tool.summary,110))}`:`<b>${kindLabel[op.kind]||'SPEAKING'}${c.status==='recovering'?' / CORRECTING':''}</b><span class="thinking-dots"><i></i><i></i><i></i></span>`,tool?'research':'thinking');
-  }else if(awaiting){
-   const open=(d?.evidence_requests||[]).filter(e=>e.status==='open');
-   for(const actor of actors){const mine=open.filter(e=>e.agent===actor.id);if(mine.length)showBubble(actor.bubble,`<b>EVIDENCE NEEDED / ${mine.map(e=>esc(e.id)).join(', ')}</b>${esc(clip(mine[0].need,110))}`,'evidence');}
-  }else if(last&&speakerBubble){
-   showBubble(speakerBubble,`<b>${esc(last.id)} / ${kindLabel[last.kind]||esc(last.kind)}${last.disposition?' / '+esc(last.disposition.replaceAll('_',' ').toUpperCase()):''}</b>${esc(clip(last.summary,140))}`,last.kind);
+  const bubbleFor=id=>actors.find(a=>a.id===id)?.bubble||(id==='moderator'?moderatorBubble:null);
+  if(researching.length){
+   for(const id of researching){const r=d.research?.[Object.keys(d.research||{}).sort().at(-1)]?.[id],el=bubbleFor(id);if(el)showBubble(el,`<b>RESEARCHING</b>${esc(clip(r?.query||'Server search and extract',110))}`,'research');}
+  }else if(inFlight.length){
+   for(const a of inFlight){const el=bubbleFor(a.agent);if(el)showBubble(el,`<b>${kindLabel[a.kind]||'SPEAKING'}${a.attempt>1?' / RETRY':''}</b><span class="thinking-dots"><i></i><i></i><i></i></span>`,'thinking');}
+  }else if(last){
+   const el=bubbleFor(last.agent);if(el)showBubble(el,`<b>${esc(last.id)} / ${kindLabel[last.kind]||esc(last.kind)}${last.disposition?' / '+esc(last.disposition.replaceAll('_',' ').toUpperCase()):''}</b>${esc(clip(last.summary,140))}`,last.kind);
   }
   const version=d?.proposals.at(-1)?.version||0;
   if(boardVersion!==null&&version>boardVersion&&!reduced.matches)boardPulse=1;
   boardVersion=version;
-  setThreads(c,running?op?.round:last?.round);
+  setThreads(c,inFlight[0]?.round||last?.round);
   display.material.emissiveIntensity=d?.proposals.length?.5:.15;
  }
  const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  function animate(time){
   const dt=Math.min(.1,(time-lastTime)/1000||0),ease=reduced.matches?1:1-Math.exp(-dt*5);
-  const speaker=actors.find(a=>a.id===active);
+  const speaker=actors.find(a=>a.id===active),standing=new Set([...speaking,...researching]);
+  if(!standing.size&&speaker&&activity!=='idle')standing.add(speaker.id);
   for(const actor of actors){
-   const isSpeaker=actor===speaker&&activity!=='idle';
+   const isSpeaker=standing.has(actor.id);
    actor.stand+=((isSpeaker?1:0)-actor.stand)*ease;
    const focus=actor.id===(selected||active);
    const facing=Math.atan2(-(boardAnchor.x-actor.x),-(boardAnchor.z-actor.z));
@@ -129,17 +132,17 @@ export function createTheater(host,onSelect){
    actor.g.rotation.set(0,actor.angle+turn*actor.stand*.6,0);
    actor.g.position.y=.3+actor.stand*.6;
    actor.light.intensity=focus?5:0;
-   const vote=actor.vote&&voteColor[actor.vote],evidence=activity==='evidence'&&!actor.bubble.hidden;
-   actor.marker.material.color.set(evidence?'#d9a441':vote||actor.color);
-   actor.marker.material.emissive.set(evidence?'#d9a441':vote||actor.color);
-   const pulse=(isSpeaker||evidence)&&!reduced.matches?.5+.5*Math.sin(time*.006):0;
+   const vote=actor.vote&&voteColor[actor.vote];
+   actor.marker.material.color.set(vote||actor.color);
+   actor.marker.material.emissive.set(vote||actor.color);
+   const pulse=isSpeaker&&!reduced.matches?.5+.5*Math.sin(time*.006):0;
    actor.marker.material.emissiveIntensity=vote?.8:focus?.65+pulse*.3:.05+pulse*.5;
    actor.marker.scale.setScalar(1+pulse*.12);
   }
-  // Research beam from the speaker to the archive while a search or extraction is pending.
-  const researching=speaker&&(activity==='search'||activity==='extract');
-  beam.visible=packet.visible=!!researching;
-  if(researching){const from=head(speaker);beam.geometry.setFromPoints([from,archiveTop]);beam.computeLineDistances();const f=reduced.matches?.5:(time*.0006)%1;packet.position.copy(from).lerp(archiveTop,f);packet.position.y+=Math.sin(f*Math.PI)*.8;}
+  // Research beam to the archive while the server researches; it cycles through the agents being researched for.
+  const researcher=researching.length?actors.find(a=>a.id===researching[Math.floor(time/1500)%researching.length]):null;
+  beam.visible=packet.visible=!!researcher;
+  if(researcher){const from=head(researcher);beam.geometry.setFromPoints([from,archiveTop]);beam.computeLineDistances();const f=reduced.matches?.5:(time*.0006)%1;packet.position.copy(from).lerp(archiveTop,f);packet.position.y+=Math.sin(f*Math.PI)*.8;}
   // Board pulse when a new proposal version arrives.
   boardPulse=Math.max(0,boardPulse-dt*.9);board.scale.setScalar(1+boardPulse*.12);display.material.emissiveIntensity=Math.max(display.material.emissiveIntensity,boardPulse);
   // Camera eases toward whoever has the floor.
@@ -151,12 +154,17 @@ export function createTheater(host,onSelect){
   renderer.render(scene,camera);
   const project=v=>{const p=v.clone().project(camera);return {x:host.offsetLeft+(p.x*.5+.5)*host.clientWidth,y:host.offsetTop+(-p.y*.5+.5)*host.clientHeight,hidden:p.z>1};};
   for(const l of labels){const p=project(l.position);l.button.style.left=`${p.x}px`;l.button.style.top=`${p.y}px`;const actor=actors.find(a=>a.id===l.button.dataset.agent);
-   l.button.classList.toggle('active',l.button.dataset.agent===(selected||active));l.button.dataset.vote=actor.vote||'';l.button.hidden=p.hidden;}
+   l.button.classList.toggle('active',selected?l.button.dataset.agent===selected:standing.has(l.button.dataset.agent)||l.button.dataset.agent===active);l.button.dataset.vote=actor.vote||'';l.button.hidden=p.hidden;}
   // Labels that would overlap after projection are stacked downward so every name and vote stays readable.
   {const placed=[];for(const l of labels.filter(l=>!l.button.hidden).sort((a,b)=>parseFloat(a.button.style.top)-parseFloat(b.button.style.top))){const w=l.button.offsetWidth,h=l.button.offsetHeight,x=parseFloat(l.button.style.left);let y=parseFloat(l.button.style.top);for(let moved=true,n=0;moved&&n<labels.length;n++){moved=false;for(const q of placed)if(Math.abs(q.x-x)<(q.w+w)/2+2&&Math.abs(q.y-y)<(q.h+h)/2+2){y=q.y+(q.h+h)/2+2;moved=true;}}l.button.style.top=`${y}px`;placed.push({x,y,w,h});}}
   for(const actor of actors){if(actor.bubble.hidden)continue;const p=project(head(actor).add(new THREE.Vector3(0,.45,0)));actor.bubble.style.left=`${p.x}px`;actor.bubble.style.top=`${p.y}px`;}
   {const p=project(new THREE.Vector3(-6.2,.2,3.1));archiveLabel.style.left=`${p.x}px`;archiveLabel.style.top=`${p.y}px`;archiveLabel.classList.toggle('active',beam.visible);}
   if(!moderatorBubble.hidden){const p=project(new THREE.Vector3(0,5.2,1.5));moderatorBubble.style.left=`${p.x}px`;moderatorBubble.style.top=`${p.y}px`;}
+  // Bubbles of agents speaking at the same time never cover each other: an overlapping bubble moves below the one it hits.
+  {const shown=[moderatorBubble,...actors.map(a=>a.bubble)].filter(el=>!el.hidden).sort((a,b)=>parseFloat(a.style.left)-parseFloat(b.style.left)),placed=[];
+   for(const el of shown){const w=el.offsetWidth,h=el.offsetHeight,x=parseFloat(el.style.left);let y=parseFloat(el.style.top);
+    for(let moved=true,n=0;moved&&n<shown.length;n++){moved=false;for(const q of placed)if(Math.abs(q.x-x)<(q.w+w)/2+4&&y-h<q.y&&q.y-q.h<y){y=q.y+h+4;moved=true;}}
+    el.style.top=`${y}px`;placed.push({x,y,w,h});}}
   // Speech bubbles never cover the stage heading: a bubble that would overlap it is moved to start just below it.
   {const heading=host.querySelector('.stage-heading')||document.querySelector('.stage-heading');if(heading){const layer=bubbleLayer.getBoundingClientRect(),h=heading.getBoundingClientRect();
    for(const el of [moderatorBubble,...actors.map(a=>a.bubble)]){if(el.hidden)continue;const b=el.getBoundingClientRect();if(b.left<h.right&&h.left<b.right&&b.top<h.bottom&&h.top<b.bottom)el.style.top=`${h.bottom-layer.top+8+b.height}px`;}}}
@@ -165,7 +173,7 @@ export function createTheater(host,onSelect){
  frame=requestAnimationFrame(animate);
  const api={setState,focus(id){selected=id;},zoom(){zoomed=!zoomed;},overview(){selected=null;zoomed=false;},
   dispose(){cancelAnimationFrame(frame);observer.disconnect();renderer.dispose();proposalTexture.dispose();for(const actor of actors)actor.bubble.remove();moderatorBubble.remove();archiveLabel.remove();scene.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});delete host.theater;},
-  inspect(){return {active,selected,activity,time:lastTime,threads:threads.children.map(t=>t.userData),beam:beam.visible,boardPulse,camera:camera.position.toArray(),
+  inspect(){return {active,speaking:[...speaking],researching:[...researching],selected,activity,time:lastTime,threads:threads.children.map(t=>t.userData),beam:beam.visible,boardPulse,camera:camera.position.toArray(),
    bubbles:[...actors.map(a=>({id:a.id,hidden:a.bubble.hidden,kind:a.bubble.className,text:a.bubble.textContent})),{id:'moderator',hidden:moderatorBubble.hidden,text:moderatorBubble.textContent}].filter(b=>!b.hidden),
    actors:actors.map(a=>({id:a.id,stand:+a.stand.toFixed(3),vote:a.vote,position:a.g.position.toArray(),rotationY:a.g.rotation.y})),proposalVersion:current?.deliberation?.proposals.at(-1)?.version||0};}};
  host.theater=api;
