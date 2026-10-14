@@ -1,16 +1,26 @@
 import {esc,listHTML} from './metrodesk-ui.js';
-import {usd,proseMismatches} from './figures.js';
 
-// The allocated and reserve figures in determination prose are written by the server from the ledger (figures.js);
-// proseMismatches stays as an independent check on every record, including those from earlier engines.
-export {proseMismatches};
+const usd=n=>'$'+Number(n).toLocaleString('en-US');
+// Dollar amounts written in the determination are model prose. The ledger figures are computed by the server from
+// the final proposal's line items, so they are the reference; prose that disagrees is flagged, not trusted.
+export function proseMismatches(text,{allocated,reserve}){
+ const amount=(n,unit)=>{const digits=(n.split('.')[1]||'').length,scale=/^m/i.test(unit||'')?1e6:/^k|^thousand/i.test(unit||'')?1e3:1,value=Number(n.replace(/,/g,''))*scale;return {value,tolerance:scale===1?0.5:scale*0.5*10**-digits};};
+ const money=String.raw`\$\s?([\d,]+(?:\.\d+)?)\s*(million|thousand|M|K)?\b`,claims=[];
+ for(const m of String(text||'').matchAll(new RegExp(String.raw`\ballocat\w*\s+`+money,'gi')))claims.push({kind:'allocated',text:m[0].trim(),...amount(m[1],m[2])});
+ for(const m of String(text||'').matchAll(new RegExp(String.raw`\b(?:retain\w*|reserve(?:\s+of|\s+at|:)?)\s+(?:a\s+)?`+money,'gi')))claims.push({kind:'reserve',text:m[0].trim(),...amount(m[1],m[2])});
+ for(const m of String(text||'').matchAll(new RegExp(money+String.raw`\s+(?:state\s+)?reserve\b`,'gi')))claims.push({kind:'reserve',text:m[0].trim(),...amount(m[1],m[2])});
+ const ledger={allocated,reserve},seen=new Set();
+ return claims.filter(c=>Number.isFinite(ledger[c.kind])&&Math.abs(c.value-ledger[c.kind])>c.tolerance).filter(c=>!seen.has(c.kind+c.value)&&seen.add(c.kind+c.value))
+  .map(c=>`Determination text states "${c.text}", but the ledger ${c.kind==='allocated'?'allocates':'reserve is'} ${usd(ledger[c.kind])}.`);
+}
+
 // Unresolved issues are grouped by what they are, with counts, so long records stay readable.
 export function groupIssues(issues,mismatches=[]){
  const groups=new Map([['Determination text vs ledger',[...mismatches]]]);
  const add=(k,v)=>{if(!groups.has(k))groups.set(k,[]);groups.get(k).push(v);};
  for(const i of issues||[]){const s=String(i),o=s.match(/^O\d+ \(([a-z_]+)\)/);
   if(o)add(o[1][0].toUpperCase()+o[1].slice(1).replaceAll('_',' ')+' objections',s);
-  else if(/^E\d+: evidence (not supplied|requested)/.test(s))add('Evidence not supplied',s);
+  else if(/^E\d+: evidence not supplied/.test(s))add('Declined evidence',s);
   else if(/^Unverified citation/.test(s))add('Unverified citations',s);
   else add('Conditions and other issues',s);}
  return [...groups].filter(([,v])=>v.length);

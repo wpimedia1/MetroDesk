@@ -29,3 +29,11 @@ export function briefForModel(c){
   return source?`\n\nDOCUMENT: ${match[1]} / registered as source ${source.id}; its full text is in sources.`:`\n\nDOCUMENT: ${section}`;
  }).join('');
 }
+// Snippets are search leads; extracted and supplied text stays complete because citations must match it exactly.
+export function sourcesForModel(c,snippetLimit=600){
+ return (c.sources||[]).map(s=>s.kind==='snippet'&&String(s.content||'').length>snippetLimit?{...s,content:String(s.content).slice(0,snippetLimit),content_truncated:true}:s);
+}
+// Retrieved text already lives in sources; the turn's retrieval log references it by ID.
+export function retrievalsForModel(c,operationId){
+ return (c.deliberation?.retrievals||[]).filter(r=>r.operation_id===operationId).map(r=>({...r,results:r.results.map(({source_id,url,title})=>({source_id,url,title}))}));
+}

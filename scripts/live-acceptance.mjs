@@ -14,7 +14,7 @@ async function request(route,data){
 let c,started=false,runRequested=false,interrupted=false;const runId=randomUUID();
 process.on('SIGINT',()=>{interrupted=true;});process.on('SIGTERM',()=>{interrupted=true;});
 try{
- const config=await request('/api/config');if(config.runtime_contract!==3)throw Error('Restart the server with the current MetroDesk runtime before acceptance.');
+ const config=await request('/api/config');if(config.runtime_contract!==2)throw Error('Restart the server with the current MetroDesk runtime before acceptance.');
  if(options.case)c=await request('/api/cases/'+options.case);
  else{
   if(!options.brief)throw Error('Supply --case CASE_ID or --brief PATH.');
@@ -29,7 +29,7 @@ try{
  while(started){
   if(interrupted)throw Error('Acceptance interrupted; stopping the run it started.');
   c=await request(`/api/cases/${c.id}`);
-  const state=[c.status,(c.deliberation.active||[]).map(a=>a.operation_id).join('+')||'-',c.deliberation.messages.length].join(' / ');
+  const state=[c.status,c.deliberation.operation?.id,c.deliberation.messages.length].join(' / ');
   if(previous!==state){console.log(state);previous=state;}
   if(runFinished(c)){started=false;break;}
   await sleep(2000);

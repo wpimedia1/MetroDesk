@@ -3,10 +3,8 @@ import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 
-// Usage: node scripts/inspect-recorded-ui.mjs CASE_ID (reads data/CASE_ID.json) or a path to an exported record.
-const arg=process.argv[2]||'',file=/^[a-f0-9-]{36}$/.test(arg)?`data/${arg}.json`:arg.endsWith('.json')?arg:null;
-if(!file)throw Error('Usage: node scripts/inspect-recorded-ui.mjs CASE_ID | RECORD.json');
-const record=JSON.parse(await readFile(file,'utf8')),id=record.id;
+const id=process.argv[2];if(!/^[a-f0-9-]{36}$/.test(id||''))throw Error('Usage: node scripts/inspect-recorded-ui.mjs CASE_ID');
+const record=JSON.parse(await readFile(`data/${id}.json`,'utf8'));
 if(!process.env.BUNDLED_MODULES)throw Error('Set BUNDLED_MODULES to a node_modules directory that contains playwright.');
 const require=createRequire(process.env.BUNDLED_MODULES+'/package.json');
 const {chromium}=require('playwright');
@@ -29,7 +27,7 @@ try{
    const request=route.request(),url=new URL(request.url());assert.equal(url.origin,'http://metrodesk-record.invalid');
    if(request.method()!=='GET')return route.fulfill({status:405,json:{error:'Read-only recorded inspection.'}});
    if(url.pathname.startsWith('/api/')){
-    if(url.pathname==='/api/config')return route.fulfill({json:{version:'metrodesk-1',runtime_contract:3,model:record.provider_calls?.at(-1)?.model||'',nebius:false,tavily:false,providers:{nebius:{configured:false,source:'none'},tavily:{configured:false,source:'none'}}}});
+    if(url.pathname==='/api/config')return route.fulfill({json:{version:'metrodesk-1',runtime_contract:2,model:record.provider_calls?.at(-1)?.model||'',nebius:false,tavily:false,providers:{nebius:{configured:false,source:'none'},tavily:{configured:false,source:'none'}}}});
     if(url.pathname==='/api/cases')return route.fulfill({json:[record]});
     if(url.pathname===`/api/cases/${id}`)return route.fulfill({json:record});
     return route.fulfill({status:404,json:{error:'Unavailable in recorded inspection.'}});
@@ -40,15 +38,12 @@ try{
   await page.goto('http://metrodesk-record.invalid');await page.waitForFunction(()=>document.querySelector('#case-select').value!==''&&document.querySelector('#status-title').textContent!=='Ready');await page.waitForTimeout(700);
   assert.equal(await page.locator('#start').isDisabled(),true);
   assert.equal(await page.locator('#footer-mode').innerText(),'RECORDED CASE');
-  const status=await page.locator('#status-title').innerText();if(record.status==='error')assert.equal(status,'Failed');if(record.status==='complete')assert.equal(status,'Finished');if(record.status==='running')assert.equal(status,'Running');
+  const status=await page.locator('#status-title').innerText();if(record.status==='error')assert.equal(status,'Failed');if(record.status==='complete')assert.equal(status,'Finished');
   const colors=await page.locator('canvas').evaluate(canvas=>{const gl=canvas.getContext('webgl2'),pixel=new Uint8Array(4),colors=new Set();for(let x=0;x<canvas.width;x+=15)for(let y=0;y<canvas.height;y+=15){gl.readPixels(x,y,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);colors.add([...pixel].join(','));}return colors.size;});assert.ok(colors>30);
   await page.screenshot({path:`artifacts/recorded-${id}-floor-${viewport.width}.png`,fullPage:true});
   await page.locator('#activity').click();assert.match(await page.locator('#content-view').innerText(),/Provider request records/);
   assert.equal(await page.locator('#content-view .receipt').filter({hasText:'Nebius / succeeded'}).count(),record.provider_calls.filter(r=>r.provider==='Nebius'&&r.status==='succeeded').length);
   await page.screenshot({path:`artifacts/recorded-${id}-activity-${viewport.width}.png`,fullPage:true});
-  await page.locator('[data-view=decision]').click();await page.waitForTimeout(300);
-  if(record.deliberation?.determination)assert.match(await page.locator('#content-view').innerText(),/agreement/i);
-  await page.screenshot({path:`artifacts/recorded-${id}-decision-${viewport.width}.png`,fullPage:true});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
   results.push({viewport,case_id:id,actual_status:record.status,accepted_messages:record.deliberation?.messages.length||0,canvas_colors:colors,read_only:true,provider_calls_made:0,errors});await page.close();
  }

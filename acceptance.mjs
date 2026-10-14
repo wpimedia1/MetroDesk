@@ -1,19 +1,14 @@
 import {passageFound} from './passage.mjs';
-import {operationSchedule,operationSteps,agreement,expectedRespondsTo} from './deliberation.mjs';
+import {operationSchedule,agreement,expectedRespondsTo} from './deliberation.mjs';
 import {checkScenario} from './scenario.mjs';
 
-// Records from the sequential engine linked each challenge to the contribution just before it.
-function legacyRespondsTo(prefix,op,expected){
- if(op.kind!=='challenge')return expected;
- const last=prefix.at(-1);return last?[last.id]:[];
-}
 export function inspectAcceptance(c,{requireResearch=false,baselineReceipts=0}={}){
  const issues=[],d=c.deliberation,schedule=operationSchedule();
- if(c.status!=='complete'||!d?.determination)issues.push('No completed determination.');
+ if(c.status!=='complete'||!d?.determination)issues.push(c.status==='awaiting_evidence'?'Paused for reviewer evidence; answer or decline the open requests in the app, then resume.':c.status==='needs_triage'?'Paused for reviewer triage; complete the triage in the app, then resume.':'No completed determination.');
  if(c.record_version!==2||!d)return {passed:false,issues:[...issues,'Not a v2 deliberation record.']};
  const finalVersion=schedule.filter(op=>['propose','revise'].includes(op.kind)).length;
  if(c.rounds.length!==3||d.proposals.length!==finalVersion||d.messages.length!==schedule.length)issues.push(`Expected three rounds, ${finalVersion} proposal versions and ${schedule.length} accepted contributions.`);
- if(d.operation||d.active?.length)issues.push('A completed record still has an unfinished operation.');
+ if(d.operation)issues.push('A completed record still has an unfinished operation.');
  if(d.dispositions.length!==4||new Set(d.dispositions.map(v=>v.agent)).size!==4)issues.push('Four distinct reviewer dispositions are required.');
  const counts={support:0,conditional_support:0,oppose:0};for(const v of d.dispositions)if(v.disposition in counts)counts[v.disposition]++;
  if(Object.keys(counts).some(key=>counts[key]!==d.determination?.agreement?.counts?.[key])||agreement(d.dispositions).status!==d.determination?.agreement?.status)issues.push('Agreement does not match recorded votes.');
@@ -29,19 +24,11 @@ export function inspectAcceptance(c,{requireResearch=false,baselineReceipts=0}={
   if(c.mode==='scenario'&&!checkScenario(proposal.scenario,c.constraints,{requirePlan:true}).valid)issues.push(`Proposal ${proposal.version} failed spending reconciliation.`);
  }
  if(d.determination&&(d.determination.message_id!==d.messages.at(-1)?.id||d.messages.at(-1)?.kind!=='determine'||d.determination.proposal_version!==finalVersion))issues.push('Determination is not linked to the moderator and final proposal.');
- // Contributions follow the step schedule: steps in order, and within a parallel step in any order.
- let position=0;
- for(const step of operationSteps()){
-  const slice=d.messages.slice(position,position+step.ops.length);
-  if(slice.length!==step.ops.length||new Set(slice.map(m=>m.operation_id)).size!==step.ops.length||slice.some(m=>!step.ops.some(op=>op.id===m.operation_id)))issues.push(`Missing or out-of-order contribution in step ${step.number}: ${step.ops.map(op=>op.id).join(', ')}.`);
-  position+=step.ops.length;
- }
- for(let i=0;i<d.messages.length;i++){
-  const message=d.messages[i],op=schedule.find(op=>op.id===message.operation_id);
-  if(!op||message.agent!==op.agent){issues.push(`${message.id} does not belong to the schedule.`);continue;}
+ for(let i=0;i<schedule.length;i++){
+  const op=schedule[i],message=d.messages[i];
+  if(!message||message.operation_id!==op.id||message.agent!==op.agent){issues.push(`Missing or out-of-order contribution: ${op.id}.`);continue;}
   const prefix=d.messages.slice(0,i),prefixIds=new Set(prefix.map(m=>m.id));
-  const current=expectedRespondsTo({deliberation:{messages:prefix,proposals:d.proposals.filter(p=>prefixIds.has(p.message_id)),dispositions:d.dispositions.filter(v=>prefixIds.has(v.message_id))}},op);
-  const expected=message.run_engine===3?current:legacyRespondsTo(prefix,op,current);
+  const expected=expectedRespondsTo({deliberation:{messages:prefix,proposals:d.proposals.filter(p=>prefixIds.has(p.message_id)),dispositions:d.dispositions.filter(v=>prefixIds.has(v.message_id))}},op);
   if(JSON.stringify(message.responds_to)!==JSON.stringify(expected))issues.push(`${message.id} is not linked to the contributions it answers.`);
   if(!d.proposals.some(p=>p.version===message.proposal_version))issues.push(`${message.id} references an unknown proposal version.`);
   if(!(c.provider_calls||[]).some(r=>r.id===message.provider_receipt_id&&r.provider==='Nebius'&&r.status==='succeeded'&&r.http_status===200&&r.agent===op.agent&&r.operation_id===op.id&&r.call===message.decision_call&&(r.request_id||r.response_id)))issues.push(`No linked successful provider receipt for ${op.id}.`);
@@ -89,6 +76,6 @@ export function parseAcceptanceArgs(args){
 // A server restart marks the case interrupted but cannot update the attempt it killed, so
 // interrupted is terminal on its own; other terminal states wait for the attempt to record them.
 export function runFinished(c){
- if(c?.status==='interrupted')return true;
+ if(['interrupted','awaiting_evidence','needs_triage'].includes(c?.status))return true;
  return ['complete','error','stopped'].includes(c?.status)&&c.attempts?.at(-1)?.status===c.status;
 }
