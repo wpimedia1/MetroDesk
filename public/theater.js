@@ -75,6 +75,7 @@ export function createTheater(host,onSelect){
  renderer.domElement.addEventListener('click',e=>{const r=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObjects(pickables)[0];if(hit)onSelect(hit.object.userData.agent);});
  const clip=(text,n)=>{text=String(text||'').replace(/\s+/g,' ').trim();return text.length>n?text.slice(0,n-1)+'…':text;};
  const kindLabel={propose:'PROPOSES',challenge:'CHALLENGES',revise:'REVISES',vote:'VOTES',determine:'DETERMINES'};
+ const activeLabel={propose:'PROPOSING',challenge:'CHALLENGING',revise:'REVISING',vote:'VOTING',determine:'DETERMINING'};
  function head(actor){return new THREE.Vector3(actor.x,2.05+actor.stand*.6,actor.z);}
  function setThreads(c,round){
   const d=c?.deliberation,byMessage=new Map((d?.messages||[]).map(m=>[m.id,m]));
@@ -101,14 +102,16 @@ export function createTheater(host,onSelect){
   speaking=inFlight.map(a=>a.agent);
   active=speaking[0]||researching[0]||(running?null:last?.agent)||null;
   activity=researching.length?'research':inFlight.length?'thinking':last?'spoken':'idle';
-  for(const actor of actors){actor.bubble.hidden=true;actor.vote=null;}
+  for(const actor of actors){actor.bubble.hidden=true;actor.vote=null;actor.activity='';}
   moderatorBubble.hidden=true;
   for(const v of d?.dispositions||[]){const actor=actors.find(a=>a.id===v.agent);if(actor)actor.vote=v.disposition;}
   const bubbleFor=id=>actors.find(a=>a.id===id)?.bubble||(id==='moderator'?moderatorBubble:null);
-  if(researching.length){
-   for(const id of researching){const r=d.research?.[Object.keys(d.research||{}).sort().at(-1)]?.[id],el=bubbleFor(id);if(el)showBubble(el,`<b>RESEARCHING</b>${esc(clip(r?.query||'Server search and extract',110))}`,'research');}
-  }else if(inFlight.length){
-   for(const a of inFlight){const el=bubbleFor(a.agent);if(el)showBubble(el,`<b>${kindLabel[a.kind]||'SPEAKING'}${a.attempt>1?' / RETRY':''}</b><span class="thinking-dots"><i></i><i></i><i></i></span>`,'thinking');}
+  // Work in progress is shown on the seat labels, so the stage stays clear; at most one speech bubble is shown,
+  // for the moderator while it writes or for the latest accepted contribution.
+  if(researching.length){for(const id of researching){const actor=actors.find(a=>a.id===id);if(actor)actor.activity='RESEARCHING';}}
+  else if(inFlight.length){
+   for(const a of inFlight){const actor=actors.find(x=>x.id===a.agent);if(actor)actor.activity=activeLabel[a.kind]+(a.attempt>1?' / RETRY':'');}
+   const moderator=inFlight.find(a=>a.agent==='moderator');if(moderator)showBubble(moderatorBubble,`<b>DETERMINING</b><span class="thinking-dots"><i></i><i></i><i></i></span>`,'thinking');
   }else if(last){
    const el=bubbleFor(last.agent);if(el)showBubble(el,`<b>${esc(last.id)} / ${kindLabel[last.kind]||esc(last.kind)}${last.disposition?' / '+esc(last.disposition.replaceAll('_',' ').toUpperCase()):''}</b>${esc(clip(last.summary,140))}`,last.kind);
   }
@@ -154,17 +157,14 @@ export function createTheater(host,onSelect){
   renderer.render(scene,camera);
   const project=v=>{const p=v.clone().project(camera);return {x:host.offsetLeft+(p.x*.5+.5)*host.clientWidth,y:host.offsetTop+(-p.y*.5+.5)*host.clientHeight,hidden:p.z>1};};
   for(const l of labels){const p=project(l.position);l.button.style.left=`${p.x}px`;l.button.style.top=`${p.y}px`;const actor=actors.find(a=>a.id===l.button.dataset.agent);
-   l.button.classList.toggle('active',selected?l.button.dataset.agent===selected:standing.has(l.button.dataset.agent)||l.button.dataset.agent===active);l.button.dataset.vote=actor.vote||'';l.button.hidden=p.hidden;}
+   l.button.classList.toggle('active',selected?l.button.dataset.agent===selected:standing.has(l.button.dataset.agent)||l.button.dataset.agent===active);l.button.dataset.vote=actor.vote||'';l.button.dataset.activity=actor.activity||'';l.button.hidden=p.hidden;}
   // Labels that would overlap after projection are stacked downward so every name and vote stays readable.
   {const placed=[];for(const l of labels.filter(l=>!l.button.hidden).sort((a,b)=>parseFloat(a.button.style.top)-parseFloat(b.button.style.top))){const w=l.button.offsetWidth,h=l.button.offsetHeight,x=parseFloat(l.button.style.left);let y=parseFloat(l.button.style.top);for(let moved=true,n=0;moved&&n<labels.length;n++){moved=false;for(const q of placed)if(Math.abs(q.x-x)<(q.w+w)/2+2&&Math.abs(q.y-y)<(q.h+h)/2+2){y=q.y+(q.h+h)/2+2;moved=true;}}l.button.style.top=`${y}px`;placed.push({x,y,w,h});}}
   for(const actor of actors){if(actor.bubble.hidden)continue;const p=project(head(actor).add(new THREE.Vector3(0,.45,0)));actor.bubble.style.left=`${p.x}px`;actor.bubble.style.top=`${p.y}px`;}
   {const p=project(new THREE.Vector3(-6.2,.2,3.1));archiveLabel.style.left=`${p.x}px`;archiveLabel.style.top=`${p.y}px`;archiveLabel.classList.toggle('active',beam.visible);}
   if(!moderatorBubble.hidden){const p=project(new THREE.Vector3(0,5.2,1.5));moderatorBubble.style.left=`${p.x}px`;moderatorBubble.style.top=`${p.y}px`;}
-  // Bubbles of agents speaking at the same time never cover each other: an overlapping bubble moves below the one it hits.
-  {const shown=[moderatorBubble,...actors.map(a=>a.bubble)].filter(el=>!el.hidden).sort((a,b)=>parseFloat(a.style.left)-parseFloat(b.style.left)),placed=[];
-   for(const el of shown){const w=el.offsetWidth,h=el.offsetHeight,x=parseFloat(el.style.left);let y=parseFloat(el.style.top);
-    for(let moved=true,n=0;moved&&n<shown.length;n++){moved=false;for(const q of placed)if(Math.abs(q.x-x)<(q.w+w)/2+4&&y-h<q.y&&q.y-q.h<y){y=q.y+h+4;moved=true;}}
-    el.style.top=`${y}px`;placed.push({x,y,w,h});}}
+  // A bubble is kept inside the stage horizontally, so it is never cut off on a narrow screen.
+  for(const el of [moderatorBubble,...actors.map(a=>a.bubble)]){if(el.hidden)continue;const half=el.offsetWidth/2+8,min=host.offsetLeft+half,max=host.offsetLeft+host.clientWidth-half;el.style.left=`${Math.min(Math.max(parseFloat(el.style.left),min),Math.max(min,max))}px`;}
   // Speech bubbles never cover the stage heading: a bubble that would overlap it is moved to start just below it.
   {const heading=host.querySelector('.stage-heading')||document.querySelector('.stage-heading');if(heading){const layer=bubbleLayer.getBoundingClientRect(),h=heading.getBoundingClientRect();
    for(const el of [moderatorBubble,...actors.map(a=>a.bubble)]){if(el.hidden)continue;const b=el.getBoundingClientRect();if(b.left<h.right&&h.left<b.right&&b.top<h.bottom&&h.top<b.bottom)el.style.top=`${h.bottom-layer.top+8+b.height}px`;}}}
