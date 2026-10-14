@@ -3,7 +3,6 @@ import {scenarioSchema,LEDGER_LIMITS} from './decision-contract.mjs';
 import {checkScenario,scenarioReview} from './scenario.mjs';
 import {registerDocuments,briefForModel} from './documents.mjs';
 import {ledgerTotals,renderFigures,usd} from './public/figures.js';
-import {sessionUsage} from './usage.mjs';
 
 export const participants=[
  {id:'negotiator',name:'Negotiator',mandate:'Propose workable decisions and concessions. Revise the full proposal in response to the reviewers; identify what changed and why.',focus:'allocation criteria and eligible costs'},
@@ -471,14 +470,13 @@ async function runOperation(c,op,io,signal,attempt,publish){
   }
  }finally{del.active=del.active.filter(x=>x!==entry);}
 }
-export async function runDeliberation(c,io,signal,{pricing}){
+export async function runDeliberation(c,io,signal){
  initializeDeliberation(c);const del=c.deliberation,steps=operationSteps();
  // Earlier engines kept a single pending operation and triage state; the step engine resumes from completed operations.
  del.operation=null;del.active=[];del.researching=[];if(del.triage){del.triage_log=[...(del.triage_log||[]),{...del.triage,superseded:'run engine 3 does not pause for triage'}];del.triage=null;}
  c.error='';c.status='running';c.started_at||=new Date().toISOString();delete c.finished_at;
- c.pricing=pricing;
  const attempt={number:c.attempts.length+1,status:'running',run_engine:3,started_at:new Date().toISOString(),model_calls:0,search_calls:0,extract_calls:0};c.attempts.push(attempt);
- const publish=async(kind,detail,extra={})=>{c.updated_at=new Date().toISOString();c.usage=sessionUsage(c);c.events.push({id:c.events.length+1,at:c.updated_at,kind,phase:kind==='research'||kind==='evidence'?'Observe':kind==='contribution'?'Act':kind==='finished'?'Evaluate':'Reason',detail,...extra});await io.save(c);};
+ const publish=async(kind,detail,extra={})=>{c.updated_at=new Date().toISOString();c.events.push({id:c.events.length+1,at:c.updated_at,kind,phase:kind==='research'||kind==='evidence'?'Observe':kind==='contribution'?'Act':kind==='finished'?'Evaluate':'Reason',detail,...extra});await io.save(c);};
  updateProgress(c,steps);
  try{
   for(const step of steps){
@@ -488,7 +486,7 @@ export async function runDeliberation(c,io,signal,{pricing}){
    if(needsResearch)await researchRound(c,io,round,signal,attempt,publish);
    const results=await Promise.allSettled(ops.map(op=>runOperation(c,op,io,signal,attempt,publish)));
    const failed=results.find(r=>r.status==='rejected');if(failed)throw failed.reason;
-   (c.progress.step_seconds||=[]).push(Math.round((Date.now()-stepStart)/100)/10);updateProgress(c,steps);c.usage=sessionUsage(c);await io.save(c);
+   (c.progress.step_seconds||=[]).push(Math.round((Date.now()-stepStart)/100)/10);updateProgress(c,steps);await io.save(c);
   }
   c.status='complete';c.phase='Evaluate';c.finished_at=new Date().toISOString();delete c.progress.current_step;updateProgress(c,steps);await publish('finished','Determination ready. Agreement and unresolved issues are recorded.');
  }catch(e){
@@ -497,7 +495,7 @@ export async function runDeliberation(c,io,signal,{pricing}){
   else{c.status='error';c.error=e.message;}
   c.finished_at=new Date().toISOString();await publish(c.status,c.error);
  }
- del.active=[];attempt.status=c.status;attempt.finished_at=new Date().toISOString();attempt.usage=c.usage=sessionUsage(c);await io.save(c);
+ del.active=[];attempt.status=c.status;attempt.finished_at=new Date().toISOString();await io.save(c);
 }
 
 // Requirement 3: evidence never blocks the run. A person may answer or decline any open request at any time,

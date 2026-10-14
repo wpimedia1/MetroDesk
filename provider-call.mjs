@@ -6,7 +6,7 @@ import {providerError} from './provider-errors.mjs';
 export async function providerCall(c,save,{url,key,data,signal,metadata={},credentialSource='unspecified',fetchImpl=fetch,onOutcome=()=>{},timeoutMs}) {
   c.provider_calls ||= [];
   const provider=new URL(url).hostname.includes('tavily')?'Tavily':'Nebius';
-  const record={id:randomUUID(),provider,endpoint:url,credential_source:credentialSource,model:data.model||null,started_at:new Date().toISOString(),status:'pending',http_status:null,request_id:null,response_id:null,usage:null};
+  const record={id:randomUUID(),provider,endpoint:url,credential_source:credentialSource,model:data.model||null,started_at:new Date().toISOString(),status:'pending',http_status:null,request_id:null,response_id:null};
   if(provider==='Nebius'){
     record.requested_max_tokens=data.max_tokens||null;
     record.requested_response_format={type:data.response_format?.type||'unspecified',schema_name:data.response_format?.json_schema?.name||null,strict:data.response_format?.json_schema?.strict??null};
@@ -14,8 +14,8 @@ export async function providerCall(c,save,{url,key,data,signal,metadata={},crede
   if(typeof metadata.agent==='string')record.agent=metadata.agent;
   if(typeof metadata.operation_id==='string')record.operation_id=metadata.operation_id;
   if(typeof metadata.purpose==='string')record.purpose=metadata.purpose;
-  for(const field of ['attempt','call','correction_attempt','round','run_engine'])if(Number.isSafeInteger(metadata[field]))record[field]=metadata[field];
-  const body=JSON.stringify(data);record.request_characters=body.length;
+  for(const field of ['attempt','call','correction_attempt','round'])if(Number.isSafeInteger(metadata[field]))record[field]=metadata[field];
+  const body=JSON.stringify(data);
   c.provider_calls.push(record);await save(c);
   const start=Date.now();
   try {
@@ -34,14 +34,10 @@ export async function providerCall(c,save,{url,key,data,signal,metadata={},crede
       throw Error(providerError(provider,r.status)+(detail?` Provider response: ${detail}`:''));
     }
     const result=await r.json();
-    if(provider==='Nebius'){record.finish_reason=result.choices?.[0]?.finish_reason||null;record.response_characters=String(result.choices?.[0]?.message?.content||'').length;}
+    if(provider==='Nebius')record.finish_reason=result.choices?.[0]?.finish_reason||null;
     record.request_id ||= typeof result.request_id==='string'?result.request_id:null;
     record.response_id=typeof result.id==='string'?result.id:null;
     record.model=typeof result.model==='string'?result.model:record.model;
-    if(result.usage && typeof result.usage==='object') {
-      record.usage={};
-      for(const key of ['prompt_tokens','completion_tokens','total_tokens','credits'])if(Number.isFinite(result.usage[key]))record.usage[key]=result.usage[key];
-    }
     record.status='succeeded';return result;
   }catch(e){
     const timedOut=!signal?.aborted&&(e.name==='TimeoutError'||e.cause?.name==='TimeoutError');

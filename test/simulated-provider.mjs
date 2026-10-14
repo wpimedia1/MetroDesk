@@ -13,8 +13,8 @@ export function simulatedProvider({faults={},latencyMs=5,pageChars=0}={}){
   state.inFlight++;state.maxInFlight=Math.max(state.maxInFlight,state.inFlight);
   try{
    const data=JSON.parse(init.body);
-   if(url===TAVILY_SEARCH){await wait(latencyMs,init.signal);state.calls.push({url,query:data.query});let h=0;for(const ch of data.query)h=(h*31+ch.charCodeAt(0))>>>0;const slug=h.toString(36);return respond({results:[1,2,3,4,5].map(n=>({url:`https://example.gov/${slug}/${n}`,title:`Guidance ${n}`,content:`Snippet ${n} for ${data.query}`})),usage:{credits:2}});}
-   if(url===TAVILY_EXTRACT){await wait(latencyMs,init.signal);state.calls.push({url,urls:data.urls});return respond({results:data.urls.map((u,i)=>({url:u,raw_content:page(u,i+1).padEnd(pageChars,' Further guidance text on eligibility, documentation and cost reimbursement.')})),failed_results:[],usage:{credits:2}});}
+   if(url===TAVILY_SEARCH){await wait(latencyMs,init.signal);state.calls.push({url,query:data.query});let h=0;for(const ch of data.query)h=(h*31+ch.charCodeAt(0))>>>0;const slug=h.toString(36);return respond({results:[1,2,3,4,5].map(n=>({url:`https://example.gov/${slug}/${n}`,title:`Guidance ${n}`,content:`Snippet ${n} for ${data.query}`}))});}
+   if(url===TAVILY_EXTRACT){await wait(latencyMs,init.signal);state.calls.push({url,urls:data.urls});return respond({results:data.urls.map((u,i)=>({url:u,raw_content:page(u,i+1).padEnd(pageChars,' Further guidance text on eligibility, documentation and cost reimbursement.')})),failed_results:[]});}
    if(url!==NEBIUS_CHAT)throw Error(`Unexpected URL ${url}`);
    const user=data.messages[1].content,payload=JSON.parse(user.split('\n\nCORRECTION: ')[0]),op=payload.operation;
    const n=(state.attemptsByOp.get(op.id)||0)+1;state.attemptsByOp.set(op.id,n);
@@ -23,12 +23,11 @@ export function simulatedProvider({faults={},latencyMs=5,pageChars=0}={}){
    if(fault==='hang'){await wait(3600000,init.signal);}
    await wait(latencyMs,init.signal);
    if(fault==='http500')return respond({error:{message:'Simulated upstream failure.'}},500);
-   const usage={prompt_tokens:Math.ceil(user.length/4),completion_tokens:0};
-   if(fault==='invalid')return respond({id:`resp-${state.requests}`,model:data.model,choices:[{message:{content:'{"summary": "unterminated'},finish_reason:'stop'}],usage:{...usage,completion_tokens:12}});
-   if(fault==='cutoff')return respond({id:`resp-${state.requests}`,model:data.model,choices:[{message:{content:'{"summary":"'+'x'.repeat(200)},finish_reason:'length'}],usage:{...usage,completion_tokens:data.max_tokens}});
+   if(fault==='invalid')return respond({id:`resp-${state.requests}`,model:data.model,choices:[{message:{content:'{"summary": "unterminated'},finish_reason:'stop'}]});
+   if(fault==='cutoff')return respond({id:`resp-${state.requests}`,model:data.model,choices:[{message:{content:'{"summary":"'+'x'.repeat(200)},finish_reason:'length'}]});
    const reply=answer(payload,faults[op.id]?.options||{});
    const content=JSON.stringify(reply);
-   return respond({id:`resp-${state.requests}`,model:data.model,choices:[{message:{content},finish_reason:'stop'}],usage:{...usage,completion_tokens:Math.ceil(content.length/4)}});
+   return respond({id:`resp-${state.requests}`,model:data.model,choices:[{message:{content},finish_reason:'stop'}]});
   }finally{state.inFlight--;}
  }
  return {fetchImpl,state};

@@ -7,12 +7,10 @@ import {initializeDeliberation,runDeliberation,respondToEvidence,operationSteps,
 import {createIO} from '../providers.mjs';
 import {inspectAcceptance} from '../acceptance.mjs';
 import {goodRun} from '../archive.mjs';
-import {pricingFrom,sessionUsage} from '../usage.mjs';
 import {renderFigures,proseMismatches,ledgerTotals} from '../public/figures.js';
 import {reportHTML} from '../report.mjs';
 import {simulatedProvider} from './simulated-provider.mjs';
 
-const pricing=pricingFrom({});
 const brief='Hurricane Quillon made landfall near Panama City Beach as a Category 2 hurricane. Ten Panhandle counties are under a state of emergency and need cash advances for emergency work.';
 function session(){
  const text='County cash positions: Franklin payroll is at risk within two weeks and Calhoun requests a full advance for debris removal.';
@@ -23,7 +21,7 @@ function harness(options){
  const io=createIO({c,keys:{nebius:{key:'test-key',source:'test',version:1},tavily:{key:'test-key',source:'test',version:1},model:'nvidia/Nemotron-3-Ultra-550b-a55b'},save:async()=>{saves.n++;},fetchImpl:sim.fetchImpl,timeouts:options?.timeouts||{}});
  return {c,io,sim,saves};
 }
-const run=(h,signal=new AbortController().signal)=>runDeliberation(h.c,h.io,signal,{pricing});
+const run=(h,signal=new AbortController().signal)=>runDeliberation(h.c,h.io,signal);
 
 test('a full run completes unattended in nine parallel steps and passes acceptance', async()=>{
  const h=harness();await run(h);
@@ -40,8 +38,7 @@ test('a full run completes unattended in nine parallel steps and passes acceptan
  assert.ok(searches.every(r=>r.purpose==='research'));
  // Requirement 1: every model call used its fixed output budget.
  for(const r of c.provider_calls.filter(r=>r.provider==='Nebius'))assert.equal(r.requested_max_tokens,OUTPUT_TOKENS[d.messages.find(m=>m.operation_id===r.operation_id).kind]);
- // Requirement 6: the meter and progress are recorded.
- const usage=sessionUsage(c);assert.equal(usage.model_calls,21);assert.ok(usage.cost_usd>0);assert.equal(c.attempts.at(-1).usage.model_calls,21);
+ assert.equal(c.attempts.at(-1).model_calls,21);
  // Requirement 2: the server writes the figures.
  const totals=ledgerTotals(d.proposals.at(-1).scenario,4675000);
  assert.deepEqual(proseMismatches(d.determination.recommendation,totals),[]);

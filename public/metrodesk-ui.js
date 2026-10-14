@@ -24,13 +24,10 @@ export function sessionStatus(c,lost=false){
   :`Brief ready. Begin deliberation when ready.${evidence}`;
  return {state,title,detail};
 }
-const money=n=>'$'+Number(n||0).toFixed(2);
-// Live meter: estimated spend, tokens used and the estimated finish time.
-export function meterText(c){
- const u=c?.usage,p=c?.progress;
- if(!u)return {cost:'',tokens:'',eta:''};
- return {cost:`${money(u.cost_usd)} spent${u.estimated?' (est.)':''}`,tokens:`${Number(u.tokens).toLocaleString('en-US')} tokens`,
-  eta:live(c)&&p?.eta_at?`Step ${Math.min((p.steps_done||0)+1,p.steps_total)} of ${p.steps_total} / finish about ${new Date(p.eta_at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`:p?.steps_total?`${p.steps_done||0} of ${p.steps_total} steps`:''};
+// Progress: the current step of nine and the estimated finish time.
+export function progressText(c){
+ const p=c?.progress;
+ return live(c)&&p?.eta_at?`Step ${Math.min((p.steps_done||0)+1,p.steps_total)} of ${p.steps_total} / finish about ${new Date(p.eta_at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`:p?.steps_total?`${p.steps_done||0} of ${p.steps_total} steps`:'';
 }
 export function messageHTML(c,m,color='#06796f'){
  return `<article class="contribution" id="message-${esc(m.id)}"><div class="message-meta"><span class="agent-swatch" style="background:${color}"></span><b>${esc(name(m.agent))}</b><span>${esc(m.kind)} / R${m.round}</span><span>${esc(m.id)} / V${m.proposal_version}</span></div><p>${esc(m.summary)}</p><div class="message-links">${m.responds_to?.length?'Responding to '+m.responds_to.map(id=>`<button class="citation message-jump" data-message="${esc(id)}">${esc(id)}</button>`).join(''):''}</div>${(m.citations||[]).map(x=>`<button class="citation source-link" data-source="${esc(x.source_id)}" data-quote="${esc(x.quote)}" title="${esc(x.claim)} (${x.verified===false?'unverified: quote not found in this source':x.repaired?'quote corrected to the closest passage in the source':'read cited passage'})">${esc(x.source_id)}${x.verified===false?' / UNVERIFIED':x.repaired?' / CORRECTED':''} <span>${esc(clip(x.claim,70))}</span></button>`).join('')}${(m.objection_ids||[]).map(id=>{const o=c.deliberation.objections.find(o=>o.id===id);return `<div class="objection"><b>${esc(id)} / ${esc(o?.severity)}${o?.status&&o.status!=='open'?' / '+esc(o.status):''}</b> ${esc(o?.summary)}</div>`;}).join('')}${(m.evidence_request_ids||[]).map(id=>{const r=c.deliberation.evidence_requests?.find(r=>r.id===id);return `<div class="objection"><b>${esc(id)} / evidence ${esc(r?.status)}</b> ${esc(r?.need)}${r?.status==='open'&&!c.deliberation.determination?` <button class="answer-evidence" data-request="${esc(id)}">Answer</button>`:''}</div>`;}).join('')}${(m.resolutions||[]).map(r=>`<div class="resolution"><b>${esc(r.objection_id)} / ${esc(r.disposition)}${r.change_refs?.length?' / changes '+esc(r.change_refs.join(', ')):''}</b> ${esc(r.explanation)}</div>`).join('')}${(m.resolution_reviews||[]).map(r=>`<div class="resolution"><b>${esc(r.objection_id)} / resolution ${esc(r.verdict)}</b> ${esc(r.reason)}</div>`).join('')}${m.disposition?`<span class="tag ${m.disposition==='oppose'?'error':m.disposition==='conditional_support'?'warning':''}">${esc(m.disposition.replaceAll('_',' '))}</span>`:''}${m.mechanical_corrections?.length?`<details class="corrections"><summary>${m.mechanical_corrections.length} server correction${m.mechanical_corrections.length===1?'':'s'}</summary>${listHTML(m.mechanical_corrections)}</details>`:''}</article>`;

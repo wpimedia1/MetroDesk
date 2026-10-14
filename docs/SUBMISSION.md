@@ -12,7 +12,7 @@ Public repository: https://github.com/wpimedia1/MetroDesk (MIT license).
 
 - Versioned, persisted agent messages, proposal versions, objections, dispositions and determination.
 - Node API, real provider transport, request receipts, reconnectable state stream, stop/resume, non-blocking reviewer evidence requests and exports.
-- Run engine 3: nine steps with parallel challenges and votes, server research once per agent per round, fixed output budgets, ledger figures written by the server, repair instead of rejection and a live cost meter. Offline tests: `npm test`.
+- Run engine 3: nine steps with parallel challenges and votes, server research once per agent per round, fixed output budgets, ledger figures written by the server, repair instead of rejection. Offline tests: `npm test`.
 - Three.js theater, Brief/Floor/Evidence/Decision views, participant selection, recorded replay and persistent outcomes.
 - MIT license, reproducible npm setup and demo script.
 - A completed live run with Tavily research from the earlier sequential engine, its flaws disclosed in the record: `records/65da1c7b-6d8a-4c20-8399-c87585e0de68-r751.json` (see VERIFICATION.md).

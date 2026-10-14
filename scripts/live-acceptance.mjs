@@ -29,7 +29,7 @@ try{
  while(started){
   if(interrupted)throw Error('Acceptance interrupted; stopping the run it started.');
   c=await request(`/api/cases/${c.id}`);
-  const state=[c.status,(c.deliberation.active||[]).map(a=>a.operation_id).join('+')||'-',c.deliberation.messages.length,c.usage?`$${c.usage.cost_usd.toFixed(2)}`:''].join(' / ');
+  const state=[c.status,(c.deliberation.active||[]).map(a=>a.operation_id).join('+')||'-',c.deliberation.messages.length].join(' / ');
   if(previous!==state){console.log(state);previous=state;}
   if(runFinished(c)){started=false;break;}
   await sleep(2000);
