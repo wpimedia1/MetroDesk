@@ -22,4 +22,13 @@ A recorded run passes acceptance (21 accepted contributions, 4 proposal versions
 - Final ledger: $13,320,000 allocated, $5,180,000 reserve (minimum $1,850,000).
 - Disclosed flaws: 67 unresolved issues in the determination; 12 deferred, 12 unreviewed and 3 disputed objections (9 verified); 7 of 164 citations unverified; 21 evidence requests declined by the reviewer; six pauses for reviewer triage during the run. The determination text states "Allocate $13.72M" and "Retain $4.93M"; the ledger figures above are authoritative, and the app and report flag the mismatch.
 
+`records/c855e390-17a2-4e05-a7c3-33da270bec43-r795.json`: Front Range wildfire, Disaster Emergency Fund allocation (planning exercise, $9,600,000 budget, 6 counties, $960,000 minimum reserve).
+
+- Acceptance: passed. 21 accepted contributions, 4 proposal versions, 4 votes, a determination.
+- Provider calls: 163, including 125 successful Nebius Token Factory calls (one failed), 28 successful Tavily searches and 9 successful Tavily extracts, across 17 run attempts.
+- Model answers: 125, of which 72 were rejected and corrected before acceptance.
+- Votes: Analyst, Risk, Strategy and Stability oppose. Agreement: contested.
+- Final ledger: $8,640,000 allocated, $960,000 reserve (minimum $960,000). The determination text matches the ledger.
+- Disclosed flaws: 85 unresolved issues in the determination; 16 deferred, 8 unreviewed and 9 disputed objections (1 verified, 2 withdrawn); 28 of 97 citations unverified; 23 evidence requests declined by the reviewer; two pauses for reviewer triage during the run.
+
 Not done: judge-accessible URL, YouTube video, AI Cloud deployment, author provider feedback.
