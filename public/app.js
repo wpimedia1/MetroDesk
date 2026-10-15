@@ -3,7 +3,7 @@ import {renderCredentials} from './credential-ui.js';
 import {scenarioHTML,receiptsHTML} from './session-ui.js';
 import {decisionSummaryHTML,decisionFigures,proseMismatches,issuesHTML,evidenceHTML} from './decision-ui.js';
 let citedOnly=false,floorPositioned=false;
-import {esc,live,sessionStatus,messageHTML,listHTML} from './metrodesk-ui.js';
+import {esc,live,sessionStatus,messageHTML,listHTML,activeSeconds,clock} from './metrodesk-ui.js';
 const $=s=>document.querySelector(s),icons=()=>window.lucide?.createIcons();
 let lastRenderedFilter='',lastRenderedMessages=0;
 let intakeDocuments=[];
@@ -64,7 +64,7 @@ function bindContent(){
 }
 function sourceLabel(s){return s.origin==='supplied_document'?'supplied document':s.kind;}
 function openSource(id,quote=''){const s=active?.sources.find(s=>s.id===id);if(!s)return;$('#source-title').textContent=s.title;$('#source-body').innerHTML='<span class="tag">'+esc(s.id)+' / '+esc(sourceLabel(s))+'</span>'+(s.origin==='supplied_document'?'<p>Supplied planning material / not independent corroboration</p><p>Upload SHA256: '+esc(s.sha256)+'</p>':'')+( /^https?:\/\//i.test(s.url)?'<p><a target="_blank" rel="noopener noreferrer" href="'+esc(s.url)+'">'+esc(s.url)+'</a></p>':'')+(quote?'<blockquote>'+esc(quote)+'</blockquote>':'')+'<pre>'+esc(s.content)+'</pre>';$('#source-dialog').showModal();}
-function elapsed(){if(!active?.started_at)return '00:00';const seconds=Math.max(0,Math.floor(((live(active)?Date.now():Date.parse(active.finished_at||active.updated_at||active.started_at))-Date.parse(active.started_at))/1000));return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');}
+function elapsed(){return active?.started_at?clock(activeSeconds(active)):'00:00';}
 function renderStatus(){const s=sessionStatus(active,connectionLost);$('#session-status').dataset.state=s.state;$('#status-title').textContent=s.title;$('#status-detail').textContent=s.detail;$('#status-round').textContent=(active?.rounds.length||0)+' / 3 rounds';$('#status-time').textContent=elapsed();$('#status-update').textContent=lastSeen?'Updated '+lastSeen.toLocaleTimeString():'Awaiting brief';const running=live(active),complete=!!active?.deliberation?.determination;$('#start').disabled=!active||running||connectionLost;$('#start span').textContent=complete?'Open decision':awaiting(active)?'Respond to evidence':needsTriage(active)?'Triage and resume':active?.attempts?.length?'Resume deliberation':'Begin deliberation';$('#stop').hidden=!running;$('#delete').disabled=!active||running;$('#export').disabled=!active;$('#report').disabled=!active;if(STATIC){if(!complete)$('#start').disabled=true;$('#delete').disabled=true;}}
 function evidenceBanner(){return (needsTriage(active)?'<div class="evidence-banner">Triage needed / '+esc((active.deliberation.triage?.agent||'')+' '+(active.deliberation.triage?.kind||''))+' failed six attempts <button class="respond-triage">Triage</button></div>':'')+(awaiting(active)?'<div class="evidence-banner">Evidence needed / '+openRequests(active).map(e=>esc(e.id+' from '+e.agent+': '+e.need)).join(' / ')+' <button class="respond-evidence">Respond</button></div>':'');}
 function proposalHTML(){

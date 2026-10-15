@@ -15,3 +15,22 @@ export function messageHTML(c,m,color='#06796f'){
 // Shortens text at a word boundary and marks the cut.
 export const clip=(s,n)=>{s=String(s??'');if(s.length<=n)return s;const at=s.lastIndexOf(' ',n);return s.slice(0,at>n*0.6?at:n).replace(/[\s,;:.\-–—]+$/,'')+'…';};
 export const listHTML=items=>`<ul class="list">${(items||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+// Working time of a session. Idle time is removed: a wait for the reviewer (evidence request or triage) counts as
+// HUMAN_RESPONSE_SECONDS, the time a real answer takes, and any gap longer than IDLE_SECONDS with no provider request
+// in flight (run stopped, server down, nobody resuming) counts as zero. Everything else counts in full.
+export const HUMAN_RESPONSE_SECONDS=300,IDLE_SECONDS=60;
+export function activeSeconds(c,now=Date.now()){
+ const t=x=>Date.parse(x),calls=(c?.provider_calls||[]).map(r=>[t(r.started_at),t(r.finished_at||r.started_at)]).filter(([a,b])=>a<=b);
+ const points=[...(c?.events||[]).map(e=>({at:t(e.at),kind:e.kind})),...calls.flatMap(([a,b])=>[{at:a},{at:b}])].filter(p=>Number.isFinite(p.at)).sort((a,b)=>a.at-b.at);
+ if(!points.length)return 0;
+ if(live(c))points.push({at:now});
+ const waiting=new Set(['evidence_requested','triage_needed']);let total=0,lastKind=null;
+ for(let i=1;i<points.length;i++){
+  const a=points[i-1].at,b=points[i].at,gap=(b-a)/1000;if(points[i-1].kind)lastKind=points[i-1].kind;
+  if(gap<=0)continue;
+  if(waiting.has(lastKind)&&!calls.some(([s,e])=>s<b&&e>a))total+=Math.min(gap,HUMAN_RESPONSE_SECONDS);
+  else if(calls.some(([s,e])=>s<b&&e>a)||gap<=IDLE_SECONDS)total+=gap;
+ }
+ return Math.floor(total);
+}
+export const clock=seconds=>{const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60),s=seconds%60,p=n=>String(n).padStart(2,'0');return h?`${h}:${p(m)}:${p(s)}`:`${p(m)}:${p(s)}`;};
