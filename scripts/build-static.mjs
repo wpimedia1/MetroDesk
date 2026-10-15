@@ -27,8 +27,10 @@ for(const [id,{file}] of latest){
 }
 index.sort((a,b)=>String(b.created).localeCompare(String(a.created)));
 writeFileSync(path.join(dist,'cases.json'),JSON.stringify(index));
-// Marks the page as the read-only build; app.js reads this attribute.
-const page=path.join(dist,'index.html'),html=readFileSync(page,'utf8');
+// The app becomes app.html, marked read-only (app.js reads data-static); the landing page becomes index.html.
+const html=readFileSync(path.join(dist,'index.html'),'utf8');
 if(!html.includes('<html lang="en">'))throw Error('index.html: <html lang="en"> not found.');
-writeFileSync(page,html.replace('<html lang="en">','<html lang="en" data-static="true">'));
+writeFileSync(path.join(dist,'app.html'),html.replace('<html lang="en">','<html lang="en" data-static="true">'));
+cpSync(path.join(root,'static','splash.html'),path.join(dist,'index.html'));
+cpSync(path.join(root,'docs','images','floor-replay.png'),path.join(dist,'floor-replay.png'));
 console.log(`dist/ built with ${index.length} recorded runs: ${index.map(c=>c.title).join('; ')}`);

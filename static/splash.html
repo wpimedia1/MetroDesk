@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#182022"><title>MetroDesk / Deliberation Theater</title><link rel="icon" href="data:,">
+<style>
+:root{--ink:#1c292e;--muted:#56656a;--line:#d9e0e0;--teal:#06796f;--coral:#e15640;--stage:#172124}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#f5f7f6}
+header{display:flex;align-items:center;gap:24px;padding:22px 36px;background:#fff;border-bottom:1px solid var(--line)}
+.brand{font:700 34px Georgia,serif;display:flex;align-items:center;gap:8px}.brand i{width:8px;height:8px;background:var(--coral);border-radius:50%;align-self:flex-end;margin-bottom:10px}
+.caption{font-size:12px;color:var(--muted);border-left:1px solid var(--line);padding-left:24px}
+main{max-width:1180px;margin:0 auto;padding:48px 36px 40px}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:44px;align-items:center}
+h1{font:400 44px/1.12 Georgia,serif;margin:0 0 18px}
+.lead{font-size:17px;line-height:1.65;color:#2e3d42;margin:0 0 22px}
+.cta{display:inline-flex;align-items:center;gap:10px;background:var(--teal);color:#fff;text-decoration:none;font-weight:700;padding:14px 22px;border-radius:4px;font-size:15px}.cta:hover{background:#075f58}
+.cta:focus-visible,a:focus-visible{outline:3px solid #d8654c;outline-offset:3px}
+.secondary{margin-left:18px;color:var(--teal);font-size:14px}
+.shot{width:100%;border:1px solid var(--line);border-radius:4px;box-shadow:0 12px 40px #0002;display:block}
+.points{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin:56px 0 40px}
+.points div{border-top:3px solid var(--teal);padding-top:14px}.points b{display:block;font-size:15px;margin-bottom:6px}.points p{margin:0;font-size:14px;line-height:1.6;color:var(--muted)}
+.built{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:18px;line-height:1.7}
+@media(max-width:860px){header{padding:18px 16px}.caption{display:none}main{padding:28px 16px}.hero{grid-template-columns:1fr;gap:28px}h1{font-size:32px}.points{grid-template-columns:1fr;gap:18px;margin:36px 0 28px}.secondary{display:block;margin:14px 0 0}}
+</style></head>
+<body>
+<header><span class="brand">MetroDesk<i></i></span><span class="caption">DELIBERATION THEATER</span></header>
+<main>
+<section class="hero">
+<div>
+<h1>Every position.<br>On the record.</h1>
+<p class="lead">Five AI agents debate an emergency funding decision: one proposes, four challenge, the proposal is revised over three rounds, and each reviewer votes. Claims cite exact source passages, and every dollar is reconciled to the budget.</p>
+<a class="cta" href="app.html">Open the recorded runs &rarr;</a>
+<a class="secondary" href="https://github.com/wpimedia1/MetroDesk">Source code and setup</a>
+</div>
+<img class="shot" src="floor-replay.png" alt="MetroDesk Floor during a recorded replay: agents in the 3D theater beside their written contributions">
+</section>
+<section class="points">
+<div><b>Three recorded deliberations</b><p>Hurricane, flood and wildfire funding decisions, each 21 contributions, saved exactly as they ran.</p></div>
+<div><b>Replay the debate</b><p>Watch proposals, challenges, revisions and votes in order, with objection threads and proposal versions.</p></div>
+<div><b>Inspect the decision</b><p>Allocation ledger, dissent, unresolved issues, cited passages and every provider request.</p></div>
+</section>
+<p class="built">Built with NVIDIA Nemotron 3 Ultra on Nebius Token Factory, and Tavily for research. This demo is read-only and makes no API calls; run MetroDesk locally with your own keys to start new sessions.</p>
+</main>
+</body></html>

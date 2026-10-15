@@ -1,5 +1,9 @@
 # MetroDesk
 
+![MetroDesk Floor during a recorded replay](docs/screenshot.png)
+
+**Live demo (read-only recorded runs):** https://metrodesk.pages.dev/
+
 Emergency planners and exercise facilitators need to see why a response proposal changed, what evidence informed it, and which objections remain. MetroDesk turns a supplied situation, documents and constraints into an inspectable council transcript and cited decision brief, with proposal history and dissent preserved.
 
 Five software agents use NVIDIA Nemotron through Nebius Token Factory in separate calls. Tavily supplies research and source extraction. The Three.js theater shows the actual speaker and execution state beside readable contributions.
@@ -92,7 +96,7 @@ Public repository: https://github.com/wpimedia1/MetroDesk. The MIT license is in
 
 ## Read-only Demo
 
-`node scripts/build-static.mjs` builds `dist/`, a read-only copy of the app containing the archived runs in `records/`. It needs no server and no provider keys and makes no API calls: sessions open from files, and Replay, the Floor, Evidence, Decision, the readable report and the JSON export work; starting or changing a session is disabled. Host `dist/` on any static host. On Cloudflare (Workers & Pages, imported from GitHub), use build command `node scripts/build-static.mjs` and deploy command `npx wrangler deploy`; `wrangler.jsonc` serves `dist/` as static assets. To run new sessions, run the server locally with your own keys (see Run).
+`node scripts/build-static.mjs` builds `dist/`: a landing page (`static/splash.html`) and, at `app.html`, a read-only copy of the app containing the archived runs in `records/`. It needs no server and no provider keys and makes no API calls: sessions open from files, and Replay, the Floor, Evidence, Decision, the readable report and the JSON export work; starting or changing a session is disabled. Host `dist/` on any static host. On Cloudflare (Workers & Pages, imported from GitHub), use build command `node scripts/build-static.mjs` and deploy command `npx wrangler deploy`; `wrangler.jsonc` serves `dist/` as static assets. To run new sessions, run the server locally with your own keys (see Run).
 
 ## Hosted Judge Access
 
