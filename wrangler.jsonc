@@ -1,0 +1,7 @@
+// Cloudflare Workers static-asset deploy of the read-only demo built by scripts/build-static.mjs.
+// Build command: node scripts/build-static.mjs   Deploy command: npx wrangler deploy
+{
+  "name": "metrodesk",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./dist" }
+}

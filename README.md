@@ -92,7 +92,7 @@ Public repository: https://github.com/wpimedia1/MetroDesk. The MIT license is in
 
 ## Read-only Demo
 
-`node scripts/build-static.mjs` builds `dist/`, a read-only copy of the app containing the archived runs in `records/`. It needs no server and no provider keys and makes no API calls: sessions open from files, and Replay, the Floor, Evidence, Decision, the readable report and the JSON export work; starting or changing a session is disabled. Host `dist/` on any static host, for example Cloudflare Pages with build command `node scripts/build-static.mjs` and output directory `dist`. To run new sessions, run the server locally with your own keys (see Run).
+`node scripts/build-static.mjs` builds `dist/`, a read-only copy of the app containing the archived runs in `records/`. It needs no server and no provider keys and makes no API calls: sessions open from files, and Replay, the Floor, Evidence, Decision, the readable report and the JSON export work; starting or changing a session is disabled. Host `dist/` on any static host. On Cloudflare (Workers & Pages, imported from GitHub), use build command `node scripts/build-static.mjs` and deploy command `npx wrangler deploy`; `wrangler.jsonc` serves `dist/` as static assets. To run new sessions, run the server locally with your own keys (see Run).
 
 ## Hosted Judge Access
 
