@@ -90,6 +90,10 @@ Targets Best Apps and Agents and functional Tavily integration. See `docs/SUBMIS
 
 Public repository: https://github.com/wpimedia1/MetroDesk. The MIT license is included. A judge-accessible working build and a public YouTube video remain outstanding. Review third-party vendor licenses before publishing.
 
+## Read-only Demo
+
+`node scripts/build-static.mjs` builds `dist/`, a read-only copy of the app containing the archived runs in `records/`. It needs no server and no provider keys and makes no API calls: sessions open from files, and Replay, the Floor, Evidence, Decision, the readable report and the JSON export work; starting or changing a session is disabled. Host `dist/` on any static host, for example Cloudflare Pages with build command `node scripts/build-static.mjs` and output directory `dist`. To run new sessions, run the server locally with your own keys (see Run).
+
 ## Hosted Judge Access
 
 Configure provider keys server-side. Set `HOST=0.0.0.0`, `APP_ORIGIN=https://your-host`, `METRODESK_USERNAME` and `METRODESK_PASSWORD`; public binding refuses startup without HTTPS origin and credentials. Built-in HTTP Basic authentication protects the entire application, including API, records and connections. Terminate TLS at a reverse proxy and do not expose the internal HTTP port. Give trusted judges application credentials, never provider keys. The acceptance runner reads these credentials privately from the environment or `.env`.
