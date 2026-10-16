@@ -16,16 +16,18 @@ Public repository: https://github.com/wpimedia1/MetroDesk (MIT license).
 - MIT license, reproducible npm setup and demo script.
 - A completed live run with Tavily research, its flaws disclosed in the record: `records/65da1c7b-6d8a-4c20-8399-c87585e0de68-r751.json` (see VERIFICATION.md).
 
+- Read-only demo of the recorded runs: https://metrodesk.pages.dev/ (no keys, no API calls).
+- Public YouTube video under three minutes: https://youtu.be/8oRJ1qgdlJE.
+
 ## Remaining
 
-- Judge-accessible application or test-build URL. A localhost URL is not publicly accessible.
-- Public YouTube video under three minutes, recorded from the working application; see DEMO.md.
 - First-person onboarding and provider feedback; see PROVIDER-FEEDBACK.md.
+- Devpost fields and submission.
 
 The submission deadline is October 30, 2026, at 1 p.m. Eastern. Source: https://nebiusglobalaihackathon.devpost.com/rules
 
 ## Judge access
 
-For judge access, deploy an authenticated HTTPS instance with provider keys configured server-side. METRODESK_USERNAME and METRODESK_PASSWORD protect the entire application; non-loopback binding refuses startup without credentials and an HTTPS APP_ORIGIN. A reverse proxy must terminate TLS, and its internal HTTP port must not be exposed. Judges receive application credentials, not provider keys. This is a shared-session instance for trusted judges, not a multi-tenant service. Public hosting has not been performed.
+For judge access, deploy an authenticated HTTPS instance with provider keys configured server-side. METRODESK_USERNAME and METRODESK_PASSWORD protect the entire application; non-loopback binding refuses startup without credentials and an HTTPS APP_ORIGIN. A reverse proxy must terminate TLS, and its internal HTTP port must not be exposed. Judges receive application credentials, not provider keys. This is a shared-session instance for trusted judges, not a multi-tenant service. The authenticated server instance is not hosted; judges use the read-only demo at https://metrodesk.pages.dev/.
 
 Organizer guidance: https://nebiusglobalaihackathon.devpost.com/updates/46205-how-to-build-a-winning-project

@@ -10,6 +10,15 @@ Emergency planners and exercise facilitators need to see why a response proposal
 
 Five software agents use NVIDIA Nemotron through Nebius Token Factory in separate calls. Tavily supplies research and source extraction. The Three.js theater shows the actual speaker and execution state beside readable contributions.
 
+## How Nemotron Is Used
+
+Every agent turn is a separate call to NVIDIA Nemotron (`nvidia/Nemotron-3-Ultra-550b-a55b`, override with `NEBIUS_MODEL`) on Nebius Token Factory at `https://api.tokenfactory.nebius.com/v1/chat/completions`, temperature 0.2. A run is 21 contributions: the Negotiator's proposal; in each of three rounds, challenges from the Analyst, Risk, Strategy and Stability reviewers and a Negotiator revision; four final votes; and the Moderator's determination.
+
+- **Structured output.** Each call sends `response_format` type `json_schema` with `strict: true` and a schema built for that operation: proposal ledger, citations, objections, resolutions, evidence requests, vote or determination.
+- **Research as tool use.** Within a turn Nemotron can return `search` or `extract` instead of a contribution, up to two times. The server runs the Tavily request, adds the results to the sources and calls Nemotron again.
+- **Server validation.** Citations are checked against the exact source text, ledger totals against the budget and minimum reserve, and resolutions against open objections. A rejected answer is returned to Nemotron as a correction. If output is cut off at the token limit, `max_tokens` doubles from 16,384 up to 65,536. After six failed attempts the run pauses for reviewer triage.
+- **Receipts.** Every call is recorded with agent, operation, HTTP status, request and response IDs, token usage and duration. Provider reasoning fields are not stored.
+
 ## Run
 
 Requires Node.js 22.13 or newer.
@@ -94,7 +103,7 @@ JSON, HTML and acceptance-inspection artifacts are written to `artifacts/`. Chec
 
 Targets Best Apps and Agents and functional Tavily integration. See `docs/SUBMISSION.md`, `docs/DEMO.md` and `docs/PROVIDER-FEEDBACK.md` for delivery status, the under-three-minute demo and factual provider feedback. The deadline is October 30, 2026, at 1 p.m. Eastern.
 
-Public repository: https://github.com/wpimedia1/MetroDesk. The MIT license is included. A judge-accessible working build and a public YouTube video remain outstanding. Review third-party vendor licenses before publishing.
+Public repository: https://github.com/wpimedia1/MetroDesk. The MIT license is included. Read-only demo: https://metrodesk.pages.dev/. Demo video: https://youtu.be/8oRJ1qgdlJE. Review third-party vendor licenses before publishing.
 
 ## Read-only Demo
 

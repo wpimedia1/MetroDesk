@@ -1,6 +1,6 @@
 # Provider Feedback
 
-No completed live run has been recorded yet. Request IDs, latency, token use and Tavily results will be taken from the first recorded run in `records/`.
+Three completed live runs are archived in `records/`, with request IDs, latency, token use and Tavily results; see VERIFICATION.md.
 
 ## Nebius Token Factory and NVIDIA Nemotron
 
