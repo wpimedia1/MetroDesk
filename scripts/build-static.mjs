@@ -5,6 +5,7 @@ import {rmSync,mkdirSync,cpSync,readdirSync,readFileSync,writeFileSync} from 'no
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {reportHTML} from '../report.mjs';
+import {contentSecurityPolicy} from '../security.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),dist=path.join(root,'dist');
 rmSync(dist,{recursive:true,force:true});
@@ -33,4 +34,6 @@ if(!html.includes('<html lang="en">'))throw Error('index.html: <html lang="en"> 
 writeFileSync(path.join(dist,'app.html'),html.replace('<html lang="en">','<html lang="en" data-static="true">'));
 cpSync(path.join(root,'static','splash.html'),path.join(dist,'index.html'));
 cpSync(path.join(root,'docs','images','floor-replay.png'),path.join(dist,'floor-replay.png'));
+// Security headers for Cloudflare static hosting (Pages and Workers static assets read _headers).
+writeFileSync(path.join(dist,'_headers'),`/*\n  Content-Security-Policy: ${contentSecurityPolicy(html)}\n  X-Frame-Options: DENY\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n`);
 console.log(`dist/ built with ${index.length} recorded runs: ${index.map(c=>c.title).join('; ')}`);

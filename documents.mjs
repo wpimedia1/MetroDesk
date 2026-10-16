@@ -1,7 +1,8 @@
 export function registerDocuments(c){
  let documents=c.documents;
- if(!documents||(Array.isArray(documents)&&!documents.length)){
-  // Older intake appended extracted documents to the brief rather than storing them.
+ if(documents===undefined||documents===null){
+  // Older intake appended extracted documents to the brief rather than storing them. New cases always carry a
+  // documents array (possibly empty) built from server-extracted uploads, so brief text cannot register a document.
   const sections=String(c.input||'').split(/\r?\n\r?\nDOCUMENT: /);
   documents=sections.slice(1).map(section=>{
    const match=section.match(/^([^\r\n]+)\r?\nSHA256: ([a-f0-9]{64})\r?\n([\s\S]*)$/);

@@ -2,7 +2,7 @@
 
 A recorded run passes acceptance (21 accepted contributions, 4 proposal versions, four votes, a determination and linked provider receipts) and has Tavily search and extract receipts. Unverified citations, unreviewed or disputed objections and declined evidence are disclosed in the record, not grounds for exclusion. Only such runs are copied to `records/`.
 
-After the runs, the text of 13 web sources was deleted from the records because the publishers' terms do not permit republication (Hurricane Quillon S15, S17, S22, S57, S58; Cedar and Iowa River S24, S28, S45; Front Range wildfire S7, S8, S12, S18, S26; see `docs/SOURCES.md`). Each deleted text is replaced by a notice and the source keeps its title and URL. All other content is unchanged. The figures below describe the runs as recorded. Re-running acceptance on the edited records now reports the citations to deleted text as unverifiable: 19 in Hurricane Quillon and 17 in Front Range wildfire. Cedar and Iowa River still passes.
+After the runs, the text of 68 web sources was deleted from the records: every source that is not a US federal work, statute or regulation text, or openly licensed (Hurricane Quillon 35, Cedar and Iowa River 13, Front Range wildfire 20; listed in `docs/SOURCES.md`). Each deleted text is replaced by a notice; the source keeps its title and URL, and the agents' citations and short quoted passages remain. All other content is unchanged. The figures below describe the runs as recorded. Re-running acceptance on the edited records now reports the citations whose source text was deleted as unverifiable: 19 in Hurricane Quillon and 17 in Front Range wildfire. Cedar and Iowa River still passes.
 
 ## Recorded runs
 
@@ -30,7 +30,7 @@ After the runs, the text of 13 web sources was deleted from the records because 
 - Provider calls: 163, including 125 successful Nebius Token Factory calls (one failed), 28 successful Tavily searches and 9 successful Tavily extracts, across 17 run attempts.
 - Model answers: 125, of which 72 were rejected and corrected before acceptance.
 - Votes: Analyst, Risk, Strategy and Stability oppose. Agreement: contested.
-- Final ledger: $8,640,000 allocated, $960,000 reserve (minimum $960,000). The determination text matches the ledger.
+- Final ledger: $8,640,000 allocated, $960,000 reserve (minimum $960,000). The determination text states no dollar figures.
 - Disclosed flaws: 85 unresolved issues in the determination; 16 deferred, 8 unreviewed and 9 disputed objections (1 verified, 2 withdrawn); 28 of 97 citations unverified; 23 evidence requests declined by the reviewer; two pauses for reviewer triage during the run.
 
-Not done: judge-accessible URL, YouTube video, AI Cloud deployment, author provider feedback.
+Published: read-only demo at https://metrodesk.pages.dev/, video at https://youtu.be/8oRJ1qgdlJE, provider feedback in `docs/PROVIDER-FEEDBACK.md`. Not done: AI Cloud deployment (not used).
