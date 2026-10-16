@@ -1,6 +1,6 @@
 # Third-party sources
 
-The recorded runs in `records/` (and the read-only demo built from them) contain text retrieved from public web pages through Tavily search and extract during each run. That text is quoted as evidence for the agents' citations. It remains the work of its authors and publishers; copyright stays with them. Works of the US federal government are generally public domain. Each source is listed below with its title, URL and the record it appears in.
+The recorded runs in `records/` (and the read-only demo built from them) contain text retrieved from public web pages through Tavily search and extract during each run. That text is quoted as evidence for the agents' citations. It remains the work of its authors and publishers; copyright stays with them. Works of the US federal government are generally public domain. Each source is listed below with its title, URL and the record it appears in. Sources marked "text removed" come from publishers whose terms do not permit republication; their text was deleted from the records after the runs, and only the citation, the agents' short quoted passages and the URL remain.
 
 ## Hurricane Quillon — FDEM cash advance allocation
 
@@ -13,14 +13,14 @@ The recorded runs in `records/` (and the read-only demo built from them) contain
 | S12 | [FEMA Public Assistance Grants Help Communities \| FEMA.gov](https://www.fema.gov/fact-sheet/fema-public-assistance-grants-help-communities-0) | search snippet |
 | S13 | [A Brief Overview of FEMA’s Public Assistance Program](https://www.congress.gov/crs-product/IF11529) | search snippet |
 | S14 | [Public Assistance Program and Policy Guide](https://www.accg.org/links/FEMA_public-assistance-program-and-policy-guide_v5_june2024.pdf) | search snippet |
-| S15 | [FEMA-Proof Your Payroll: Writing Policies with ...](https://open.substack.com/pub/localresiliencereport/p/fema-proof-your-payroll-writing-policies?r=itjf2) | full extract |
+| S15 | [FEMA-Proof Your Payroll: Writing Policies with ...](https://open.substack.com/pub/localresiliencereport/p/fema-proof-your-payroll-writing-policies?r=itjf2) | full extract, text removed |
 | S16 | [Public Assistance Program and Policy Guide](https://des.mt.gov/PAPPGv5.0_January06_2025_signed.pdf) | full extract |
-| S17 | [Category B Emergency Protective Measures vs. Routine Operations/Increased Operating Costs \| Baker Donelson](https://www.bakerdonelson.com/category-b-emergency-protective-measures-vs-routine-operations/increased-operating-costs) | full extract |
+| S17 | [Category B Emergency Protective Measures vs. Routine Operations/Increased Operating Costs \| Baker Donelson](https://www.bakerdonelson.com/category-b-emergency-protective-measures-vs-routine-operations/increased-operating-costs) | full extract, text removed |
 | S18 | [FEMA Public Assistance](https://portal.ct.gov/demhs/emergency-management/resources-for-officials/disaster-recovery/fema-public-assistance/public-assistance-process) | search snippet |
 | S19 | [FEMA Public Assistance Program Category B (Emergency ...](https://endhomelessness.org/wp-content/uploads/2020/04/FEMA-one-pager-4.28.2020.pdf) | search snippet |
 | S20 | [42 U.S. Code § 5170b - Essential assistance \| U.S. Code \| US Law \| LII / Legal Information Institute](https://www.law.cornell.edu/uscode/text/42/5170b) | search snippet |
 | S21 | [FEMA PUBLIC ASSISTANCE AND THE COVID-19 CRISIS](https://nlihc.org/sites/default/files/Category-FEMA-Public-Assistance-COVID-19-Crisis.pdf) | search snippet |
-| S22 | [FEMA - Florida Nonprofit Alliance](https://www.flnonprofits.org/fema) | search snippet |
+| S22 | [FEMA - Florida Nonprofit Alliance](https://www.flnonprofits.org/fema) | search snippet, text removed |
 | S23 | [Public Assistance Grant Program \| Florida Disaster](https://www.floridadisaster.org/dem/recovery/recovery-programs/PA) | search snippet |
 | S24 | [FEMA Public Assistance Information](https://www.fha.org/FHA/FHA/News-Content/New-Releases/FEMA-Public-Assistance-Information-10-5-2022.aspx) | search snippet |
 | S25 | [Emergency Management – FEMA Reimbursement](http://faca.fl-counties.com/sites/default/files/2017-07/FEMA%20Reimbursements%20and%20Best%20Practices%20Power%20Point.pdf) | full extract |
@@ -55,8 +55,8 @@ The recorded runs in `records/` (and the read-only demo built from them) contain
 | S54 | [Summary of the FEMA Public Assistance Reimbursement ...](https://www.sog.unc.edu/sites/www.sog.unc.edu/files/general_media/NCEM%20FEMA%20Cost%20Reimbursement%20Process%20Guidance%205-5-2020.pdf) | search snippet |
 | S55 | [Federal Register :: Florida; Major Disaster and Related Determinations](https://www.federalregister.gov/documents/2024/12/06/2024-28680/florida-major-disaster-and-related-determinations) | full extract |
 | S56 | [BILL ANALYSIS AND FISCAL IMPACT STATEMENT](https://www.flsenate.gov/Session/Bill/2026/840/Analyses/2026s00840.pre.ca.PDF) | search snippet |
-| S57 | [Coronavirus: FEMA reimbursement eligibility for emergency protective measures - ICC](https://www.iccsafe.org/building-safety-journal/bsj-hits/coronavirus-fema-reimbursement-eligibility-for-emergency-protective-measures) | search snippet |
-| S58 | [Category B Emergency Protective Measures vs. Routine Operations/Increased Operating Costs \| Baker Donelson - JDSupra](https://jdsupra.com/legalnews/category-b-emergency-protective-9073464) | search snippet |
+| S57 | [Coronavirus: FEMA reimbursement eligibility for emergency protective measures - ICC](https://www.iccsafe.org/building-safety-journal/bsj-hits/coronavirus-fema-reimbursement-eligibility-for-emergency-protective-measures) | search snippet, text removed |
+| S58 | [Category B Emergency Protective Measures vs. Routine Operations/Increased Operating Costs \| Baker Donelson - JDSupra](https://jdsupra.com/legalnews/category-b-emergency-protective-9073464) | search snippet, text removed |
 | S59 | [FEMA CATEGORY B EMERGENCY PROTECTIVE MEASURES](https://www.govstar.org/pappg-chapter-overview/fema-category-b-emergency-protective-measures) | search snippet |
 | S60 | [Key Takeaways of FEMA’s PAPPG V5 \| ICF](https://www.icf.com/insights/disaster-management/fema-pappg-v5) | search snippet |
 | S61 | [Assistance for Governments and Private Non-Profits After a Disaster \| FEMA.gov](https://www.fema.gov/assistance/public) | search snippet |
@@ -86,11 +86,11 @@ The recorded runs in `records/` (and the read-only demo built from them) contain
 | S21 | [Federal Register :: Natural Disaster Procedures: Preparedness, Response, and Recovery Activities of the Corps of Engineers](https://www.federalregister.gov/documents/2022/11/15/2022-24543/natural-disaster-procedures-preparedness-response-and-recovery-activities-of-the-corps-of-engineers) | search snippet |
 | S22 | [public law 84-99 rehabilitation assistance for non-federal ...](https://www.spa.usace.army.mil/portals/16/docs/emergencymgmt/pl84-99-rehab_assist_nffc_projects.pdf) | search snippet |
 | S23 | [Public Law 84-99](https://www.usace.army.mil/Media/Fact-Sheets/Fact-Sheets-View/Article/4314556/public-law-84-99) | search snippet |
-| S24 | [FEMA Major Disaster Declaration - Iowa Severe Winter Storm](https://safeguardproperties.com/fema-major-disaster-declaration-iowa-severe-winter-storm) | search snippet |
+| S24 | [FEMA Major Disaster Declaration - Iowa Severe Winter Storm](https://safeguardproperties.com/fema-major-disaster-declaration-iowa-severe-winter-storm) | search snippet, text removed |
 | S25 | [Federal Emergency Management Agency (FEMA) \| Disaster Recovery](https://disasterrecovery.iowa.gov/federal-assistance/federal-emergency-management-agency-fema) | search snippet |
 | S26 | [New FEMA Major and Emergency Disaster Declarations - HUD Exchange](https://www.hudexchange.info/news/new-fema-major-disaster-declarations) | search snippet |
 | S27 | [Iowa; Major Disaster and Related Determinations](https://www.regulations.gov/document/FEMA-2024-0001-0094) | search snippet |
-| S28 | [Proposed Cuts to Federal Disaster Assistance Will Hit States Just as Hurricane Season Ramps Up](https://www.urban.org/urban-wire/proposed-cuts-federal-disaster-assistance-will-hit-states-just-hurricane-season-ramps) | search snippet |
+| S28 | [Proposed Cuts to Federal Disaster Assistance Will Hit States Just as Hurricane Season Ramps Up](https://www.urban.org/urban-wire/proposed-cuts-federal-disaster-assistance-will-hit-states-just-hurricane-season-ramps) | search snippet, text removed |
 | S29 | [eCFR :: 33 CFR Part 203 -- Emergency Employment of Army and Other Resources, Natural Disaster Procedures](https://www.ecfr.gov/current/title-33/chapter-II/part-203) | search snippet |
 | S30 | [33CFR203@usace.army.mil February 16, 2023 The ...](https://waterways.org/wordpress2/wp-content/uploads/2024/02/NWC-comments-on-PL84-99-Feb-16-2023-FINAL.pdf) | search snippet |
 | S31 | [USACE Disaster Operations, Public Law 84-99](https://www.cdid1.org/DocumentCenter/View/362/Fact-Sheet---Public-Law-84-99?bidId=) | full extract |
@@ -107,7 +107,7 @@ The recorded runs in `records/` (and the read-only demo built from them) contain
 | S42 | [Iowa Disaster History \| Homeland Security and Emergency Management](https://homelandsecurity.iowa.gov/disasters/iowa-disaster-history) | search snippet |
 | S43 | [Federal Register :: Presidential Declaration Amendment of a Major Disaster for the State of Iowa](https://www.federalregister.gov/documents/2024/07/16/2024-15547/presidential-declaration-amendment-of-a-major-disaster-for-the-state-of-iowa) | search snippet |
 | S44 | [USACE Disaster Operations Public Law 84-99: Flood Control and ...](https://www.nab.usace.army.mil/Portals/63/docs/EMO/PL84-99factsheet.pdf) | search snippet |
-| S45 | [FEMA Major Disaster Declaration - Iowa Severe Storms ...](https://safeguardproperties.com/fema-major-disaster-declaration-iowa-severe-storms-and-tornadoes) | search snippet |
+| S45 | [FEMA Major Disaster Declaration - Iowa Severe Storms ...](https://safeguardproperties.com/fema-major-disaster-declaration-iowa-severe-storms-and-tornadoes) | search snippet, text removed |
 | S46 | [DR-4795 Public Notice - NMDHSEM](https://www.dhsem.nm.gov/dr-4795-public-notice) | search snippet |
 | S47 | [Public Law 84-99 Assistance Guidelines > Omaha District > Fact Sheet Article View](https://www.nwo.usace.army.mil/Media/Fact-Sheets/Fact-Sheet-Article-View/Article/487605/public-law-84-99-assistance-guidelines) | search snippet |
 | S48 | [4795-DR-NM Amendment 005](https://www.fema.gov/disaster-federal-register-notice/4795-dr-nm-amendment-005) | search snippet |
@@ -123,18 +123,18 @@ The recorded runs in `records/` (and the read-only demo built from them) contain
 
 | ID | Source | Retrieved as |
 | --- | --- | --- |
-| S7 | [Colorado Revised Statutes Section 24-33.5-705.4 (2025)](https://law.justia.com/codes/colorado/title-24/principal-departments/article-33-5/part-7/section-24-33-5-705-4) | search snippet |
-| S8 | [Colorado Revised Statutes Title 24. Government State § 24 ...](https://codes.findlaw.com/co/title-24-government-state/co-rev-st-sect-24-33-5-705-4) | full extract |
+| S7 | [Colorado Revised Statutes Section 24-33.5-705.4 (2025)](https://law.justia.com/codes/colorado/title-24/principal-departments/article-33-5/part-7/section-24-33-5-705-4) | search snippet, text removed |
+| S8 | [Colorado Revised Statutes Title 24. Government State § 24 ...](https://codes.findlaw.com/co/title-24-government-state/co-rev-st-sect-24-33-5-705-4) | full extract, text removed |
 | S9 | [2020 Wildfire Preparedness Plan](https://spl.cde.state.co.us/artemis/psserials/ps912internet/ps9122020internet.pdf) | search snippet |
 | S10 | [REREVISED](https://dhsem.colorado.gov/sites/dhsem/files/documents/1283_rer.pdf) | search snippet |
 | S11 | [The Disaster Emergency Fund](https://content.leg.colorado.gov/sites/default/files/documents/audits/2163p_disaster_emergency_fund.pdf) | search snippet |
-| S12 | [2025 Colorado Revised Statutes Title 24, , Article 33.5, Part 7](https://law.justia.com/codes/colorado/title-24/principal-departments/article-33-5/part-7) | search snippet |
+| S12 | [2025 Colorado Revised Statutes Title 24, , Article 33.5, Part 7](https://law.justia.com/codes/colorado/title-24/principal-departments/article-33-5/part-7) | search snippet, text removed |
 | S13 | [Colorado Revised Statutes 2024](https://content.leg.colorado.gov/sites/default/files/images/olls/crs2024-title-24.pdf) | search snippet |
 | S14 | [HOUSE BILL 18-1394 BY REPRESENTATIVE(S) Singer ...](https://leg.colorado.gov/sites/default/files/documents/2018A/bills/2018a_1394_enr.pdf) | search snippet |
 | S15 | [PREAMENDED](http://leg.colorado.gov/bill_files/106540/download) | search snippet |
 | S16 | [Concerning Resources For Disaster Preparedness And ...](https://scholar.law.colorado.edu/cgi/viewcontent.cgi?article=10519&context=session-laws-2001-2050) | full extract |
 | S17 | [colorado - state o](https://spl.cde.state.co.us/artemis/goserials/go4312internet/go43122019005internet.pdf) | search snippet |
-| S18 | [Colorado Revised Statutes Title 24. Government State § 24-33.5-706 \| FindLaw](https://codes.findlaw.com/co/title-24-government-state/co-rev-st-sect-24-33-5-706) | full extract |
+| S18 | [Colorado Revised Statutes Title 24. Government State § 24-33.5-706 \| FindLaw](https://codes.findlaw.com/co/title-24-government-state/co-rev-st-sect-24-33-5-706) | full extract, text removed |
 | S19 | [D 2022 030](https://spl.cde.state.co.us/artemis/goserials/go4312internet/go43122022030internet.pdf) | search snippet |
 | S20 | [C.R.S. 24-33.5-704 – The governor and disaster emergencies](https://colorado.public.law/statutes/crs_24-33.5-704) | search snippet |
 | S21 | [memorandum of understanding](https://www.parkcountyco.gov/AgendaCenter/ViewFile/Item/8098?fileID=3804) | search snippet |
@@ -142,7 +142,7 @@ The recorded runs in `records/` (and the read-only demo built from them) contain
 | S23 | [Colorado Declaring a Disaster Emergency \| FMCSA](https://www.fmcsa.dot.gov/emergency/colorado-declaring-disaster-emergency) | search snippet |
 | S24 | [Governor Polis Declaring a Disaster Emergency Due to the June 2023 Severe Weather and Flooding : The Prowers Journal](https://theprowersjournal.com/2023/09/governor-polis-declaring-a-disaster-emergency-due-to-the-june-2023-severe-weather-and-flooding) | search snippet |
 | S25 | [D 2023 012](https://spl.cde.state.co.us/artemis/goserials/go4312internet/go43122023012internet.pdf) | search snippet |
-| S26 | [Colorado Revised Statutes Section 24-33.5-706 (2025)](https://law.justia.com/codes/colorado/title-24/principal-departments/article-33-5/part-7/section-24-33-5-706) | search snippet |
+| S26 | [Colorado Revised Statutes Section 24-33.5-706 (2025)](https://law.justia.com/codes/colorado/title-24/principal-departments/article-33-5/part-7/section-24-33-5-706) | search snippet, text removed |
 | S27 | [BILLPAPER](https://leg.colorado.gov/sites/default/files/images/20b-0026_01.pdf) | search snippet |
 | S28 | [C.R.S. 24-33.5-706 – Disaster emergency fund](https://colorado.public.law/statutes/crs_24-33.5-706) | search snippet |
 | S29 | [contents](https://www.clearcreekcounty.us/AgendaCenter/ViewFile/Item/6687?fileID=10058) | search snippet |

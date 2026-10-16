@@ -2,6 +2,8 @@
 
 A recorded run passes acceptance (21 accepted contributions, 4 proposal versions, four votes, a determination and linked provider receipts) and has Tavily search and extract receipts. Unverified citations, unreviewed or disputed objections and declined evidence are disclosed in the record, not grounds for exclusion. Only such runs are copied to `records/`.
 
+After the runs, the text of 13 web sources was deleted from the records because the publishers' terms do not permit republication (Hurricane Quillon S15, S17, S22, S57, S58; Cedar and Iowa River S24, S28, S45; Front Range wildfire S7, S8, S12, S18, S26; see `docs/SOURCES.md`). Each deleted text is replaced by a notice and the source keeps its title and URL. All other content is unchanged. The figures below describe the runs as recorded. Re-running acceptance on the edited records now reports the citations to deleted text as unverifiable: 19 in Hurricane Quillon and 17 in Front Range wildfire. Cedar and Iowa River still passes.
+
 ## Recorded runs
 
 `records/65da1c7b-6d8a-4c20-8399-c87585e0de68-r751.json`: Hurricane Quillon, FDEM cash advance allocation (planning exercise, $46,750,000 budget, 10 counties, $4,675,000 minimum reserve).
