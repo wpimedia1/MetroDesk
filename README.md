@@ -19,6 +19,8 @@ Every agent turn is a separate call to NVIDIA Nemotron (`nvidia/Nemotron-3-Ultra
 - **Server validation.** Citations are checked against the exact source text, ledger totals against the budget and minimum reserve, and resolutions against open objections. A rejected answer is returned to Nemotron as a correction. If output is cut off at the token limit, `max_tokens` doubles from 16,384 up to 65,536. After six failed attempts the run pauses for reviewer triage.
 - **Receipts.** Every call is recorded with agent, operation, HTTP status, request and response IDs, token usage and duration. Provider reasoning fields are not stored.
 
+Token Factory served as the hosted inference endpoint for Nemotron; it did not speed up development. No other Nebius tools or services were used: no AI Cloud, Serverless Jobs, Serverless Endpoints or DevPods.
+
 ## Run
 
 Requires Node.js 22.13 or newer.
