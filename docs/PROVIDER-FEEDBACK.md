@@ -17,3 +17,7 @@ Used for search and extract. I used Tavily to ground the LLM for accuracy. It wa
 ## Nebius AI Cloud
 
 Not used. This build has not been deployed on AI Cloud, Serverless Jobs, Serverless Endpoints or DevPods.
+
+## Documentation
+
+The documentation was good on both platforms and helpful in explaining which services to use for my goal.
