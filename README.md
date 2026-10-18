@@ -8,6 +8,8 @@
 
 Emergency planners and exercise facilitators need to see why a response proposal changed, what evidence informed it, and which objections remain. MetroDesk turns a supplied situation, documents and constraints into an inspectable council transcript and cited decision brief, with proposal history and dissent preserved.
 
+Every citation is checked against the exact passage in its source, every dollar is recomputed from the line items, and each reviewer's dissent stays in the record.
+
 Five software agents use NVIDIA Nemotron through Nebius Token Factory in separate calls. Tavily supplies research and source extraction. The Three.js theater shows the actual speaker and execution state beside readable contributions.
 
 ## How Nemotron Is Used
