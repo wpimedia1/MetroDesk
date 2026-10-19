@@ -6,9 +6,9 @@ Three completed live runs are archived in `records/`, with request IDs, latency,
 
 Model: `nvidia/Nemotron-3-Ultra-550b-a55b`, endpoint `https://api.tokenfactory.nebius.com/v1/chat/completions`, `response_format` type `json_schema`, `strict: true`.
 
-I used Token Factory for agent prompts and API inference.
+**Nebius Token Factory:** MetroDesk's entire deliberation runs on it. All 21+ structured-output agent calls per run (358 calls across the three recorded deliberations) hit Token Factory's chat-completions endpoint. I have extensive experience with API calls, and when using Claude and similar models the call pattern is synonymous, so there was no learning curve. It was fast considering MetroDesk's call rate. I used the highest-tier model, NVIDIA Nemotron 3 Ultra, specifically to leverage the high context window. That let me skip building a separate retrieval layer, since long documents went straight into each agent's context, and the server checks every quoted passage against them. Several pieces of this project will stay on Token Factory. For structured-output agent inference I'd build on it again.
 
-Onboarding was confusing: distinguishing between AI Cloud and Token Factory was not intuitive. I'm used to Google Cloud Console, where everything is in the same UI. I wasn't able to successfully call all of the listed model endpoints, for example the Nano models. Once I was up and running, the platform became clearer, but I still feel the split between the two is a mistake. I would avoid this platform, given my Type A need for control. That said, I may look into the Nebius certification I saw on the site.
+**Onboarding critique:** distinguishing between AI Cloud and Token Factory wasn't intuitive. I'm used to Google Cloud Console, where everything lives in one UI, and I couldn't successfully call all the listed model endpoints (the Nano models, for example). Once configured, the endpoint itself was reliable. What I'd change: clearer routing between AI Cloud and Token Factory at signup, and verified status for every listed model endpoint. The experience also sparked my interest in the Nebius certification on the site.
 
 ## NVIDIA Nemotron 3 Ultra
 
@@ -16,11 +16,11 @@ I used Nemotron 3 Ultra (`nvidia/Nemotron-3-Ultra-550b-a55b`) for all five agent
 
 ## Tavily
 
-Used for search and extract. I used Tavily to ground the LLM for accuracy. It was very easy: no hassle, no failed calls and no hallucinations. I will most likely start using Tavily to ground some of my projects. I have left the Tavily tab open and plan on digging deeper.
+New to me. I'm used to grounding with Google Search on GCS. MetroDesk's agents call Tavily search and extract mid-turn to ground objections in live sources, which removed a whole grounding layer I'd otherwise have hand-built. I plan to dig into the Tavily cookbook next. It's already inspiring a build for the upcoming Meta hackathon.
 
-## Nebius AI Cloud
+## Nebius AI Cloud (Serverless)
 
-Not used. This build has not been deployed on AI Cloud, Serverless Jobs, Serverless Endpoints or DevPods.
+I didn't use it for this build. Conceptually it reads like Google Cloud Functions, so I can't speak to it from experience.
 
 ## Documentation
 
