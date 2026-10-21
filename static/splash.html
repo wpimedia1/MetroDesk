@@ -17,15 +17,15 @@ h1{font:400 44px/1.12 Georgia,serif;margin:0 0 18px}
 .shot{width:100%;border:1px solid var(--line);border-radius:4px;box-shadow:0 12px 40px #0002;display:block}
 .points{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin:56px 0 40px}
 .points div{border-top:3px solid var(--teal);padding-top:14px}.points b{display:block;font-size:15px;margin-bottom:6px}.points p{margin:0;font-size:14px;line-height:1.6;color:var(--muted)}
-.guide{background:#203b37;color:#fff;border-radius:4px;padding:22px 26px;margin:0 0 40px;font-size:14px;line-height:1.65}.guide h2{font:700 17px Arial,Helvetica,sans-serif;margin:0 0 8px}.guide p{margin:8px 0}.guide ol{margin:8px 0;padding-left:20px}.guide li{margin:5px 0}
+.guide{background:#203b37;color:#fff;border-radius:4px;padding:22px 26px;margin:0 0 40px;font-size:14px;line-height:1.65}.guide summary{cursor:pointer;font-size:16px}.guide p{margin:8px 0}.guide ol{margin:8px 0;padding-left:20px}.guide li{margin:5px 0}
 .built{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:18px;line-height:1.7}
 @media(max-width:860px){header{padding:18px 16px}.caption{display:none}main{padding:28px 16px}.hero{grid-template-columns:1fr;gap:28px}h1{font-size:32px}.points{grid-template-columns:1fr;gap:18px;margin:36px 0 28px}.secondary{display:block;margin:14px 0 0}}
 </style></head>
 <body>
 <header><span class="brand">MetroDesk<i></i></span><span class="caption">DELIBERATION THEATER</span></header>
 <main>
-<section class="guide" aria-labelledby="judge-guide">
-<h2 id="judge-guide">Judge guide / recorded runs, read-only, no API calls</h2>
+<details class="guide" id="judge-guide" open>
+<summary><b>Judge guide</b> / recorded runs, read-only, no API calls</summary>
 <p>These are three complete MetroDesk deliberations, recorded from live runs: five agents on NVIDIA Nemotron 3 Ultra through Nebius Token Factory, with Tavily research. Each record is shown as saved, except that web text not clearly licensed for republication has been removed (the citations and URLs remain; see docs/SOURCES.md in the repository). Nothing on this page calls a model.</p>
 <ol>
 <li><b>Open the recorded runs</b> with the button below, then <b>choose a run</b> under Session record.</li>
@@ -34,7 +34,7 @@ h1{font:400 44px/1.12 Georgia,serif;margin:0 0 18px}
 <li><b>Decision</b>: the final allocation ledger, votes, dissent and unresolved issues. <b>Evidence</b>: every source. The report and download buttons give the full record.</li>
 </ol>
 <p>Purpose: show how a recommendation changed under challenge, what evidence it rests on, and what stays unresolved. To run new sessions, run MetroDesk locally with your own keys (see the README).</p>
-</section>
+</details>
 <section class="hero">
 <div>
 <h1>Every position.<br>On the record.</h1>
